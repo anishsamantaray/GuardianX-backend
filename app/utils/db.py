@@ -9,8 +9,9 @@ dynamodb = boto3.resource(
         aws_access_key_id='AKIARN33E7O3DYAQNVGT',
         aws_secret_access_key='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'
 )
+
 user_table = dynamodb.Table("users")
-otp_table = dynamodb.Table("otp_requests")
+otp_table = dynamodb.Table("otp_table")
 
 async def check_user_by_email(email: str) -> bool:
     response = user_table.get_item(Key={"email": email})

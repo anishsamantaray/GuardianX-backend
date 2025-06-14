@@ -24,8 +24,8 @@ async def send_otp_email(email: str, otp: str):
             <p style="font-size: 16px; color: #333;">Hello,</p>
             <p style="font-size: 16px; color: #333;">
                 Your OTP code is:
-                <span style="display: inline-block; font-size: 24px; font-weight: bold; background: #e8f0fe; padding: 8px 16px; border-radius: 6px; margin-top: 10px;">
-                    {otp}
+                <span style="display: inline-block; font-size: 24px; font-weight: bold; background: white; padding: 8px 16px; border-radius: 6px; margin-top: 10px;">
+                {otp}
                 </span>
             </p>
             <p style="font-size: 14px; color: #666;">This code is valid for 5 minutes.</p>

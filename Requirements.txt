@@ -2,3 +2,6 @@ boto3
 fastapi
 pydantic
 python-dotenv
+mangum
+pydantic[email]
+python-jose

@@ -1,6 +1,9 @@
 from pydantic import BaseModel, EmailStr
 from typing import List, Optional
 
+class EmailRequest(BaseModel):
+    email: EmailStr
+
 class EmergencyContact(BaseModel):
     name: str
     phone: str
