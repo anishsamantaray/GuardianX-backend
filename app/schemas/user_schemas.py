@@ -4,6 +4,7 @@ from typing import List, Optional
 class EmergencyContact(BaseModel):
     name: str
     phone: str
+    email: EmailStr
 
 class Address(BaseModel):
     line1: str

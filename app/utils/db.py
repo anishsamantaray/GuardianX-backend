@@ -3,7 +3,12 @@ from app.schemas.user_schemas import UserSignupRequest
 import time
 import random
 
-dynamodb = boto3.resource("dynamodb", region_name="ap-south-1")
+dynamodb = boto3.resource(
+        "dynamodb",
+        region_name='ap-south-1',  # Change to your region
+        aws_access_key_id='AKIARN33E7O3DYAQNVGT',
+        aws_secret_access_key='lbcqRcOcamF8hxT44JgYSj0Hby+NWvqm+gFxx928'
+)
 user_table = dynamodb.Table("users")
 otp_table = dynamodb.Table("otp_requests")
 
