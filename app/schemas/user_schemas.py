@@ -4,10 +4,10 @@ from typing import List, Optional
 class EmailRequest(BaseModel):
     email: EmailStr
 
-class EmergencyContact(BaseModel):
-    name: str
-    phone: str
-    email: EmailStr
+# class EmergencyContact(BaseModel):
+#     name: str
+#     phone: str
+#     email: EmailStr
 
 class Address(BaseModel):
     line1: str
@@ -23,7 +23,7 @@ class UserSignupRequest(BaseModel):
     email: EmailStr
     phone: str
     whatsapp_opt_in: bool
-    emergency_contacts: List[EmergencyContact]
+    # emergency_contacts: List[EmergencyContact]
     home_address: Address
 
 class OTPVerifyRequest(BaseModel):

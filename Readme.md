@@ -105,29 +105,29 @@ docker push <ecr-url>/guardianx-api:latest
 
 ## 📦 DynamoDB Tables
 
-| Table          | Primary Key | Sort Key     | Purpose                |
-| -------------- | ----------- | ------------ | ---------------------- |
-| `users`        | email       | –            | User registration info |
-| `otp_requests` | email       | –            | OTP storage + TTL      |
-| `sos_events`   | email       | timestamp    | SOS trigger logs       |
-| `incidents`    | email       | incident\_id | Reported incidents     |
+| Table          | Partition Key | Sort Key     | Purpose                |
+| -------------- |---------------| ------------ | ---------------------- |
+| `users`        | email         | –            | User registration info |
+| `otp_requests` | email         | –            | OTP storage + TTL      |
+| `sos_events`   | email         | timestamp    | SOS trigger logs       |
+| `incidents`    | email         | incident\_id | Reported incidents     |
 
 ---
 
 ## 📚 API Endpoints Overview
 
-| Method | Endpoint             | Description                 |
-| ------ | -------------------- | --------------------------- |
-| POST   | /user/signup         | Create new user             |
-| POST   | /user/send-otp       | Send OTP to registered user |
-| POST   | /user/verify-otp     | Validate OTP, return tokens |
-| POST   | /refresh-token       | Get new access token        |
-| GET    | /user/me             | Fetch current user profile  |
-| POST   | /sos/trigger         | Log SOS event               |
-| POST   | /sos/heartbeat       | Update live location        |
-| POST   | /incident/report     | Submit past safety report   |
-| GET    | /places/autocomplete | Proxy for address typing    |
-| GET    | /places/details      | Get full address from ID    |
+| Method | Endpoint            | Description                 |
+| ------ |---------------------| --------------------------- |
+| POST   | /user/signup        | Create new user             |
+| POST   | /user/send-otp      | Send OTP to registered user |
+| POST   | /user/verify-otp    | Validate OTP, return tokens |
+| POST   | /user/refresh-token | Get new access token        |
+| GET    | /user/me            | Fetch current user profile  |
+| POST   | /sos/trigger        | Log SOS event               |
+| POST   | /sos/heartbeat      | Update live location        |
+| POST   | /incident/report    | Submit past safety report   |
+| GET    | /maps/autocomplete  | Proxy for address typing    |
+| GET    | /maps/details       | Get full address from ID    |
 
 ---
 

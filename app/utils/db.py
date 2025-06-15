@@ -23,7 +23,7 @@ async def create_user_document(data: UserSignupRequest) -> str:
         "name": data.name,
         "phone": data.phone,
         "whatsapp_opt_in": data.whatsapp_opt_in,
-        "emergency_contacts": [ec.dict() for ec in data.emergency_contacts],
+        # "emergency_contacts": [ec.dict() for ec in data.emergency_contacts],
         "home_address": data.home_address.dict()
     }
 
