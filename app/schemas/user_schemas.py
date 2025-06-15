@@ -14,6 +14,9 @@ class Address(BaseModel):
     line2: Optional[str] = ""
     city: str
     state: str
+    lat: float
+    long: float
+    pincode : str
 
 class UserSignupRequest(BaseModel):
     name: str
@@ -26,3 +29,6 @@ class UserSignupRequest(BaseModel):
 class OTPVerifyRequest(BaseModel):
     email: EmailStr
     otp: str
+
+class RefreshTokenRequest(BaseModel):
+    refresh_token: str
