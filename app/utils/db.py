@@ -58,3 +58,6 @@ async def verify_email_otp(email: str, otp: str) -> bool:
     # Optional: delete OTP after verification
     otp_table.delete_item(Key={"email": email})
     return True
+
+def get_dynamodb_table(table_name: str):
+    return dynamodb.Table(table_name)
