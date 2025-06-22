@@ -43,3 +43,28 @@ async def send_otp_email(email: str, otp: str):
         server.starttls()
         server.login(SMTP_USER, SMTP_PASS)
         server.sendmail(SMTP_USER, email, msg.as_string())
+
+def send_html_email(to_email: str, subject: str, html_body: str):
+    msg = MIMEMultipart("alternative")
+    msg["Subject"] = subject
+    msg["From"] = SMTP_USER
+    msg["To"] = to_email
+
+    msg.attach(MIMEText(html_body, "html"))
+
+    with smtplib.SMTP(SMTP_HOST, SMTP_PORT) as server:
+        server.starttls()
+        server.login(SMTP_USER, SMTP_PASS)
+        server.sendmail(SMTP_USER, to_email, msg.as_string())
+
+async def send_ally_sos_email(to_email: str, user_email: str, location_text: str):
+    subject = f"GuardianX – SOS Alert from {user_email}"
+    html_body = f"""
+    <html><body>
+    <h2>SOS Update</h2>
+    <p>{user_email} is currently in danger and has triggered an SOS.</p>
+    <p><strong>Location:</strong> {location_text}</p>
+    <p>Please take action if needed. This is an automated update from GuardianX.</p>
+    </body></html>
+    """
+    send_html_email(to_email, subject, html_body)

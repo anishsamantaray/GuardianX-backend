@@ -62,3 +62,12 @@ def get_pending_requests(to_email: str):
     )
     items = response.get("Items", [])
     return [r for r in items if r["status"] == "pending"]
+
+def get_accepted_allies(email: str) -> list[str]:
+    response = users_table.get_item(Key={"email": email})
+    item = response.get("Item")
+
+    if not item:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    return item.get("allies", [])
