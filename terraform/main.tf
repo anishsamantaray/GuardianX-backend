@@ -22,12 +22,18 @@ resource "aws_iam_role_policy_attachment" "lambda_basic_exec" {
   policy_arn = "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
 }
 
+resource "aws_iam_role_policy_attachment" "lambda_dynamodb_access" {
+  role       = aws_iam_role.lambda_exec.name
+  policy_arn = "arn:aws:iam::aws:policy/AmazonDynamoDBFullAccess"
+}
+
 resource "aws_lambda_function" "guardianx" {
   function_name = "guardianx-fastapi"
   package_type  = "Image"
   image_uri     = var.image_uri
   role          = aws_iam_role.lambda_exec.arn
   timeout       = 30
+
 }
 
 resource "aws_apigatewayv2_api" "guardianx_api" {
