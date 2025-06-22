@@ -3,9 +3,10 @@ import boto3
 from boto3.dynamodb.conditions import Key
 from fastapi import HTTPException
 
-dynamodb = boto3.resource("dynamodb", region_name="ap-south-1")
-requests_table = dynamodb.Table("ally_requests")
-users_table = dynamodb.Table("users")
+from app.utils.db import get_dynamodb_table
+
+requests_table = get_dynamodb_table("ally_requests")
+users_table = get_dynamodb_table("users")
 def check_existing_request(from_email: str, to_email: str):
     response = requests_table.get_item(
         Key={"to_email": to_email, "from_email": from_email}

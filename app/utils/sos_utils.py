@@ -1,11 +1,13 @@
 import boto3
 import time
 from boto3.dynamodb.conditions import Key
+
+from app.utils.db import get_dynamodb_table
 from app.utils.maps import reverse_geocode
 from app.utils.email import send_ally_sos_email
 from app.utils.ally_utils import get_accepted_allies
-dynamodb = boto3.resource("dynamodb", region_name="ap-south-1")
-sos_table = dynamodb.Table("sos_events")
+
+sos_table = get_dynamodb_table("sos_events")
 
 def trigger_sos(email: str, location: dict, timestamp: str):
     sos_table.put_item(Item={
