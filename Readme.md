@@ -2,18 +2,19 @@
 
 **Tagline**: *Built for safety. Designed for freedom.*
 
-GuardianX is a secure, scalable backend system built with **FastAPI**, designed to power a real-time personal safety app. It features OTP-based authentication, user registration, real-time SOS tracking, and incident reporting. The system is deployed serverlessly on **AWS Lambda** via **ECR** and triggered through **API Gateway**.
+GuardianX is a secure, scalable backend system built with **FastAPI**, designed to power a real-time personal safety app. It features OTP-based authentication, user registration, real-time SOS tracking, incident reporting, and ally-based location tracking. The system is deployed serverlessly on **AWS Lambda** using Docker images stored in **ECR**, triggered via **API Gateway**, and managed using **Terraform**.
 
 ---
 
-## 📐 Architecture
+## 🖐️ Architecture
 
 **Core Stack:**
 
 * **Backend**: FastAPI (ASGI)
 * **Deployment**: AWS Lambda + API Gateway
 * **Container**: AWS ECR (Docker)
-* **Database**: DynamoDB (users, sos\_events, otp\_requests)
+* **Infrastructure as Code**: Terraform
+* **Database**: DynamoDB (users, sos\_events, incidents, otp\_requests)
 * **Email**: SMTP (Gmail)
 * **Auth**: JWT + Refresh Tokens
 * **Geolocation**: Google Maps API (proxied)
@@ -24,7 +25,8 @@ GuardianX is a secure, scalable backend system built with **FastAPI**, designed 
 2. User requests OTP → email OTP sent via Gmail SMTP
 3. OTP verified → JWT + refresh token issued
 4. User triggers SOS → location + timestamp stored in `sos_events`
-5. Optional: location heartbeat + incident reporting
+5. Ally users receive email alerts and can track real-time location
+6. Optional: location heartbeat + incident reporting
 
 ---
 
@@ -77,57 +79,61 @@ GOOGLE_MAPS_API_KEY=your_maps_key
 ### 1. Build Docker Image
 
 ```bash
-docker build -t guardianx-api .
+docker build -t guardianx-fastapi .
 ```
 
 ### 2. Push to ECR
 
 ```bash
-aws ecr create-repository --repository-name guardianx-api  # if not created
 aws ecr get-login-password | docker login --username AWS --password-stdin <ecr-url>
-docker tag guardianx-api:latest <ecr-url>/guardianx-api:latest
-docker push <ecr-url>/guardianx-api:latest
+docker tag guardianx-fastapi:latest <ecr-url>/guardianx-fastapi:latest
+docker push <ecr-url>/guardianx-fastapi:latest
 ```
 
-### 3. Create Lambda (Container-based)
+### 3. Deploy Using Terraform
 
-* Runtime: `Provide your own image`
-* Image URI: `<ecr-url>/guardianx-api:latest`
-* Handler: `app.main.handler`
+```bash
+cd terraform
+terraform init
+terraform apply -auto-approve
+```
 
-### 4. Connect API Gateway
+### 4. API Gateway Endpoint
 
-* Trigger Lambda via API Gateway (HTTP API or REST)
-* Enable CORS
-* Deploy stages (`dev`, `prod`)
+Terraform will output the live HTTP endpoint linked to Lambda.
 
 ---
 
 ## 📦 DynamoDB Tables
 
-| Table          | Partition Key | Sort Key     | Purpose                |
-| -------------- |---------------| ------------ | ---------------------- |
-| `users`        | email         | –            | User registration info |
-| `otp_requests` | email         | –            | OTP storage + TTL      |
-| `sos_events`   | email         | timestamp    | SOS trigger logs       |
-| `incidents`    | email         | incident\_id | Reported incidents     |
+| Table          | Partition Key | Sort Key  | Purpose                |
+| -------------- | ------------- | --------- | ---------------------- |
+| `users`        | email         | –         | User registration info |
+| `otp_requests` | email         | –         | OTP storage + TTL      |
+| `sos_events`   | email         | timestamp | SOS trigger logs       |
+| `incidents`    | incident\_id  | –         | Reported incidents     |
 
 ---
 
 ## 📚 API Endpoints Overview
 
-| Method | Endpoint            | Description                 |
-| ------ |---------------------| --------------------------- |
-| POST   | /user/signup        | Create new user             |
-| POST   | /user/send-otp      | Send OTP to registered user |
-| POST   | /user/verify-otp    | Validate OTP, return tokens |
-| POST   | /user/refresh-token | Get new access token        |
-| GET    | /user/me            | Fetch current user profile  |
-| POST   | /sos/trigger        | Log SOS event               |
-| POST   | /sos/heartbeat      | Update live location        |
-| POST   | /incident/report    | Submit past safety report   |
-| GET    | /maps/autocomplete  | Proxy for address typing    |
-| GET    | /maps/details       | Get full address from ID    |
+| Method | Endpoint                  | Description                     |
+| ------ | ------------------------- | ------------------------------- |
+| POST   | /user/signup              | Create new user                 |
+| POST   | /user/send-otp            | Send OTP to registered user     |
+| POST   | /user/verify-otp          | Validate OTP, return tokens     |
+| POST   | /user/refresh-token       | Get new access token            |
+| GET    | /user/me                  | Fetch current user profile      |
+| PUT    | /user/edit                | Update user profile             |
+| POST   | /sos/trigger              | Log SOS event                   |
+| POST   | /sos/heartbeat            | Update live location            |
+| GET    | /sos/track/{email}        | Track live SOS location of user |
+| POST   | /incident/report          | Submit past safety report       |
+| GET    | /incident/history/{email} | View user's incident history    |
+| GET    | /incident/{incident\_id}  | Get specific incident details   |
+| GET    | /maps/autocomplete        | Proxy for address typing        |
+| GET    | /maps/details             | Get full address from ID        |
+| GET    | /maps/distance-from-home  | Distance from home via road     |
 
 ---
 
@@ -135,16 +141,17 @@ docker push <ecr-url>/guardianx-api:latest
 
 * [ ] Push notifications (SNS)
 * [ ] Admin dashboard (React + Map integration)
-* [ ] Emergency contact alerting
-* [ ] Zone-based geofencing
-* [ ] Upload images/audio for incident
-* [ ] Chatbot integration for quick help
+* [ ] Emergency contact alerts with ally system
+* [ ] Zone-based geofencing and risk prediction
+* [ ] Upload media (image/audio) for incidents
+* [ ] Chatbot integration (LLM-powered)
+* [ ] Mobile App using React Native
 
 ---
 
 ## 🧠 Credits
 
-Built by Anish Samantaray using FastAPI, AWS Lambda, and DynamoDB for GuardianX as a personal project.
+Built by Anish Samantaray using FastAPI, AWS Lambda, and DynamoDB for GuardianX – a modern safety and incident reporting platform.
 
 ---
 
