@@ -47,3 +47,17 @@ async def get_incident_history(email: str = Path(...)):
         return {"message": "No incidents found", "incidents": []}
 
     return {"incidents": items}
+
+@router.get("/{incident_id}")
+async def get_incident_by_id(incident_id: str = Path(...)):
+    try:
+        response = incident_table.get_item(Key={"incident_id": incident_id})
+        item = response.get("Item")
+
+        if not item:
+            raise HTTPException(status_code=404, detail="Incident not found")
+
+        return item
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error fetching incident: {str(e)}")

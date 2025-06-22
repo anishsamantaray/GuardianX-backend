@@ -1,11 +1,12 @@
 from fastapi import APIRouter, HTTPException, Query
-from app.schemas.user_schemas import UserSignupRequest, OTPVerifyRequest, EmailRequest, RefreshTokenRequest
+from app.schemas.user_schemas import UserSignupRequest, OTPVerifyRequest, EmailRequest, RefreshTokenRequest, \
+    UpdateUserProfile
 from app.utils.auth import  create_access_token, create_refresh_token, verify_token
 from app.utils.db import check_user_by_email, create_user_document, generate_and_store_email_otp, verify_email_otp
 from app.utils.email import send_otp_email
-
+from app.utils.db import get_dynamodb_table
 router = APIRouter(prefix="/user", tags=["User"])
-
+user_table = get_dynamodb_table("users")
 
 @router.post("/send-otp")
 async def send_otp(payload: EmailRequest):
@@ -51,3 +52,48 @@ async def refresh_token(payload: RefreshTokenRequest):
 
     new_access_token = create_access_token(email)
     return { "access_token": new_access_token }
+
+@router.get("/profile")
+async def get_user_profile(email: str = Query(...)):
+    response = user_table.get_item(Key={"email": email})
+    user = response.get("Item")
+
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    return user
+
+@router.patch("/editprofile")
+async def update_user_profile(data: UpdateUserProfile):
+    update_expr = []
+    expr_attr_values = {}
+    expr_attr_names = {}
+
+    if data.name is not None:
+        update_expr.append("#name = :name")
+        expr_attr_names["#name"] = "name"
+        expr_attr_values[":name"] = data.name
+
+    if data.phone is not None:
+        update_expr.append("phone = :phone")
+        expr_attr_values[":phone"] = data.phone
+
+    if data.whatsapp_opt_in is not None:
+        update_expr.append("whatsapp_opt_in = :opt")
+        expr_attr_values[":opt"] = data.whatsapp_opt_in
+
+    if data.home_address is not None:
+        update_expr.append("home_address = :addr")
+        expr_attr_values[":addr"] = data.home_address
+
+    if not update_expr:
+        raise HTTPException(status_code=400, detail="No fields to update")
+
+    user_table.update_item(
+        Key={"email": data.email},
+        UpdateExpression="SET " + ", ".join(update_expr),
+        ExpressionAttributeNames=expr_attr_names if expr_attr_names else None,
+        ExpressionAttributeValues=expr_attr_values
+    )
+
+    return {"message": "Profile updated successfully"}

@@ -26,3 +26,10 @@ class OTPVerifyRequest(BaseModel):
 
 class RefreshTokenRequest(BaseModel):
     refresh_token: str
+
+class UpdateUserProfile(BaseModel):
+    email: EmailStr
+    name: Optional[str] = None
+    phone: Optional[str] = None
+    whatsapp_opt_in: Optional[bool] = None
+    home_address: Optional[dict] = None
