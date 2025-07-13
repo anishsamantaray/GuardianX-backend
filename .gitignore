@@ -3,3 +3,4 @@ terraform/.terraform
 notes.txt
 terraform/terraform.tfstate
 terraform/terraform.tfstate.backup
+terraform/terraform.tfvars
