@@ -34,7 +34,15 @@ resource "aws_lambda_function" "guardianx" {
   role          = aws_iam_role.lambda_exec.arn
   timeout       = 30
 
+  # Forces update every time Terraform runs (hacky but works)
+
+  source_code_hash = filebase64sha256("C:/Users/lenovo/PycharmProjects/GuardianX-backend/Dockerfile")
+
+  environment {
+    variables = var.lambda_env_vars
+  }
 }
+
 
 resource "aws_apigatewayv2_api" "guardianx_api" {
   name          = "guardianx-api"

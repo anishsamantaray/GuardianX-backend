@@ -1,0 +1,26 @@
+version: 0.2
+
+env:
+  variables:
+    IMAGE_NAME: guardianx
+    ECR_URI: 495599775583.dkr.ecr.ap-south-1.amazonaws.com/guardianx-backend:latest
+
+phases:
+  pre_build:
+    commands:
+      - echo Logging into Amazon ECR...
+      - aws ecr get-login-password --region ap-south-1 | docker login --username AWS --password-stdin $ECR_URI
+      - COMMIT_HASH=$(echo $CODEBUILD_RESOLVED_SOURCE_VERSION | cut -c 1-7)
+      - IMAGE_TAG=$COMMIT_HASH
+  build:
+    commands:
+      - docker build -t $IMAGE_NAME:$IMAGE_TAG .
+      - docker tag $IMAGE_NAME:$IMAGE_TAG $ECR_URI:$IMAGE_TAG
+  post_build:
+    commands:
+      - docker push $ECR_URI:$IMAGE_TAG
+      - echo "image_uri = \"$ECR_URI:$IMAGE_TAG\"" > image.auto.tfvars
+artifacts:
+  files:
+    - image.auto.tfvars
+    - terraform/**
