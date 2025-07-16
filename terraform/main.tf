@@ -36,7 +36,7 @@ resource "aws_lambda_function" "guardianx" {
 
   # Forces update every time Terraform runs (hacky but works)
 
-  source_code_hash = filebase64sha256("C:/Users/lenovo/PycharmProjects/GuardianX-backend/Dockerfile")
+  source_code_hash = filebase64sha256("${path.module}/../.build_id")
 
   environment {
     variables = var.lambda_env_vars
