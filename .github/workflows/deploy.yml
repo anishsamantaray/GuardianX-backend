@@ -51,5 +51,4 @@ jobs:
       - name: Terraform Apply
         run: |
           cd terraform
-          terraform apply -auto-approve \
-            -var="image_uri=$ECR_URI:latest"
+          terraform apply -auto-approve 
