@@ -41,14 +41,32 @@ jobs:
       - name: Install Terraform
         uses: hashicorp/setup-terraform@v3
         with:
-            terraform_version: 1.6.6
+          terraform_version: 1.6.6
 
       - name: Terraform Init
         run: |
           cd terraform
           terraform init
 
+      - name: Generate terraform.tfvars from GitHub Secrets
+        run: |
+          cat <<EOF > terraform/terraform.tfvars
+          lambda_env_vars = {
+            SMTP_HOST = "${{ secrets.SMTP_HOST }}"
+            SMTP_PORT = "${{ secrets.SMTP_PORT }}"
+            SMTP_USER = "${{ secrets.SMTP_USER }}"
+            SMTP_PASS = "${{ secrets.SMTP_PASS }}"
+            JWT_SECRET_KEY = "${{ secrets.JWT_SECRET_KEY }}"
+            JWT_ALGORITHM = "${{ secrets.JWT_ALGORITHM }}"
+            JWT_EXPIRE_MINUTES = "${{ secrets.JWT_EXPIRE_MINUTES }}"
+            JWT_REFRESH_EXPIRE_MINUTES = "${{ secrets.JWT_REFRESH_EXPIRE_MINUTES }}"
+            GOOGLE_PLACES_API_KEY = "${{ secrets.GOOGLE_PLACES_API_KEY }}"
+          }
+          
+          image_uri = "${{ secrets.IMAGE_URI }}"
+          EOF
+
       - name: Terraform Apply
         run: |
           cd terraform
-          terraform apply -auto-approve 
+          terraform apply -auto-approve -var-file="terraform.tfvars"
