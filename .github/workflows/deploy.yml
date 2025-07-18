@@ -61,6 +61,7 @@ jobs:
             JWT_EXPIRE_MINUTES = "${{ secrets.JWT_EXPIRE_MINUTES }}"
             JWT_REFRESH_EXPIRE_MINUTES = "${{ secrets.JWT_REFRESH_EXPIRE_MINUTES }}"
             GOOGLE_PLACES_API_KEY = "${{ secrets.GOOGLE_PLACES_API_KEY }}"
+            GUARDIANX_API_KEY = "${{ secrets.GUARDIANX_API_KEY }}"
           }
           
           image_uri = "${{ secrets.IMAGE_URI }}"
