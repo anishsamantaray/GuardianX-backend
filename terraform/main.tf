@@ -1,5 +1,3 @@
-
-
 provider "aws" {
   region = var.aws_region
 }
@@ -107,7 +105,12 @@ resource "aws_api_gateway_deployment" "deployment" {
     aws_api_gateway_integration.docs_integration
   ]
   rest_api_id = aws_api_gateway_rest_api.guardianx_api.id
-  stage_name  = "prod"
+}
+
+resource "aws_api_gateway_stage" "prod" {
+  rest_api_id   = aws_api_gateway_rest_api.guardianx_api.id
+  deployment_id = aws_api_gateway_deployment.deployment.id
+  stage_name    = "prod"
 }
 
 
@@ -120,9 +123,9 @@ resource "aws_api_gateway_usage_plan" "guardianx_plan" {
   name = "guardianx-usage-plan"
 
   api_stages {
-    api_id = aws_api_gateway_rest_api.guardianx_api.id
-    stage  = aws_api_gateway_deployment.deployment.stage_name
-  }
+  api_id = aws_api_gateway_rest_api.guardianx_api.id
+  stage  = aws_api_gateway_stage.prod.stage_name
+}
 
   throttle {
     burst_limit = 100
