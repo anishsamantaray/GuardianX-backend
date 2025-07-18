@@ -4,7 +4,7 @@ from app.routes.maps import router as maps_router
 from app.routes.ally import router as ally_router
 from app.routes.sos import router as sos_router
 from app.routes.incident import router as incident_router
-
+import os
 from mangum import Mangum
 
 app = FastAPI(title="GuardianX Backend")
@@ -12,7 +12,7 @@ app = FastAPI(title="GuardianX Backend")
 @app.middleware("http")
 async def check_api_key(request: Request, call_next):
     exempt_paths = ["/docs", "/openapi.json", "/redoc"]
-    if any(path in request.url.path for path in exempt_paths):
+    if any(request.url.path.endswith(path) for path in exempt_paths):
         return await call_next(request)
 
     api_key = request.headers.get("x-api-key")
