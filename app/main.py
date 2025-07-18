@@ -11,15 +11,15 @@ app = FastAPI(title="GuardianX Backend")
 
 @app.middleware("http")
 async def check_api_key(request: Request, call_next):
-    exempt_paths = ["/docs", "/openapi.json", "/redoc"]
-    if any(request.url.path.endswith(path) for path in exempt_paths):
-        return await call_next(request)
-
-    api_key = request.headers.get("x-api-key")
-    expected_key = os.environ.get("GUARDIANX_API_KEY")
-
-    if api_key != expected_key:
-        raise HTTPException(status_code=403, detail="Forbidden")
+    # exempt_paths = ["/docs", "/openapi.json", "/redoc"]
+    # if any(request.url.path.endswith(path) for path in exempt_paths):
+    #     return await call_next(request)
+    #
+    # api_key = request.headers.get("x-api-key")
+    # expected_key = os.environ.get("GUARDIANX_API_KEY")
+    #
+    # if api_key != expected_key:
+    #     raise HTTPException(status_code=403, detail="Forbidden")
 
     return await call_next(request)
 app.include_router(user_router)
