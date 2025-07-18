@@ -12,7 +12,7 @@ app = FastAPI(title="GuardianX Backend")
 @app.middleware("http")
 async def check_api_key(request: Request, call_next):
     exempt_paths = ["/docs", "/openapi.json", "/redoc"]
-    if request.url.path in exempt_paths:
+    if any(path in request.url.path for path in exempt_paths):
         return await call_next(request)
 
     api_key = request.headers.get("x-api-key")
