@@ -84,7 +84,7 @@ resource "aws_api_gateway_stage" "prod" {
 
 resource "aws_api_gateway_api_key" "guardianx_key" {
   name    = "guardianx-client-key"
-  enabled = true
+  enabled = false
 }
 
 resource "aws_api_gateway_usage_plan" "guardianx_plan" {
@@ -102,11 +102,7 @@ resource "aws_api_gateway_usage_plan" "guardianx_plan" {
     }
 }
 
-resource "aws_api_gateway_usage_plan_key" "guardianx_usage_key" {
-  key_id        = aws_api_gateway_api_key.guardianx_key.id
-  key_type      = "API_KEY"
-  usage_plan_id = aws_api_gateway_usage_plan.guardianx_plan.id
-}
+
 
 resource "aws_lambda_permission" "apigw" {
   statement_id  = "AllowAPIGatewayInvoke"
