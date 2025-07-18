@@ -144,11 +144,12 @@ resource "aws_api_gateway_usage_plan" "guardianx_plan" {
     api_id = aws_api_gateway_rest_api.guardianx_api.id
     stage  = aws_api_gateway_stage.prod.stage_name
 
-    throttle_settings {
+
+  }
+  throttle_settings {
       burst_limit = 100
       rate_limit  = 50
     }
-  }
 }
 
 resource "aws_api_gateway_usage_plan_key" "guardianx_usage_key" {
