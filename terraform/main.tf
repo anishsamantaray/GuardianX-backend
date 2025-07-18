@@ -1,6 +1,9 @@
+
+
 provider "aws" {
   region = var.aws_region
 }
+
 
 resource "aws_iam_role" "lambda_exec" {
   name = "guardianx-lambda-exec"
@@ -27,14 +30,13 @@ resource "aws_iam_role_policy_attachment" "lambda_dynamodb_access" {
   policy_arn = "arn:aws:iam::aws:policy/AmazonDynamoDBFullAccess"
 }
 
+
 resource "aws_lambda_function" "guardianx" {
   function_name = "guardianx-fastapi"
   package_type  = "Image"
   image_uri     = var.image_uri
   role          = aws_iam_role.lambda_exec.arn
   timeout       = 30
-
-  # Forces update every time Terraform runs (hacky but works)
 
   source_code_hash = filebase64sha256("${path.module}/../.build_id")
 
@@ -44,35 +46,101 @@ resource "aws_lambda_function" "guardianx" {
 }
 
 
-resource "aws_apigatewayv2_api" "guardianx_api" {
-  name          = "guardianx-api"
-  protocol_type = "HTTP"
+resource "aws_api_gateway_rest_api" "guardianx_api" {
+  name = "guardianx-rest-api"
 }
 
-resource "aws_apigatewayv2_integration" "lambda_integration" {
-  api_id                = aws_apigatewayv2_api.guardianx_api.id
-  integration_type      = "AWS_PROXY"
-  integration_uri       = aws_lambda_function.guardianx.invoke_arn
-  integration_method    = "POST"
-  payload_format_version = "2.0"
+
+resource "aws_api_gateway_resource" "proxy" {
+  rest_api_id = aws_api_gateway_rest_api.guardianx_api.id
+  parent_id   = aws_api_gateway_rest_api.guardianx_api.root_resource_id
+  path_part   = "{proxy+}"
 }
 
-resource "aws_apigatewayv2_route" "default" {
-  api_id    = aws_apigatewayv2_api.guardianx_api.id
-  route_key = "$default"
-  target    = "integrations/${aws_apigatewayv2_integration.lambda_integration.id}"
+# ANY method on proxy
+resource "aws_api_gateway_method" "proxy_method" {
+  rest_api_id   = aws_api_gateway_rest_api.guardianx_api.id
+  resource_id   = aws_api_gateway_resource.proxy.id
+  http_method   = "ANY"
+  authorization = "NONE"
+  api_key_required = true
 }
 
-resource "aws_apigatewayv2_stage" "default" {
-  api_id      = aws_apigatewayv2_api.guardianx_api.id
-  name        = "$default"
-  auto_deploy = true
+# Lambda integration
+resource "aws_api_gateway_integration" "lambda_integration" {
+  rest_api_id             = aws_api_gateway_rest_api.guardianx_api.id
+  resource_id             = aws_api_gateway_resource.proxy.id
+  http_method             = aws_api_gateway_method.proxy_method.http_method
+  integration_http_method = "POST"
+  type                    = "AWS_PROXY"
+  uri                     = aws_lambda_function.guardianx.invoke_arn
 }
 
-resource "aws_lambda_permission" "api_gateway" {
+
+resource "aws_api_gateway_resource" "docs" {
+  rest_api_id = aws_api_gateway_rest_api.guardianx_api.id
+  parent_id   = aws_api_gateway_rest_api.guardianx_api.root_resource_id
+  path_part   = "docs"
+}
+
+resource "aws_api_gateway_method" "docs_method" {
+  rest_api_id   = aws_api_gateway_rest_api.guardianx_api.id
+  resource_id   = aws_api_gateway_resource.docs.id
+  http_method   = "GET"
+  authorization = "NONE"
+  api_key_required = false
+}
+
+resource "aws_api_gateway_integration" "docs_integration" {
+  rest_api_id             = aws_api_gateway_rest_api.guardianx_api.id
+  resource_id             = aws_api_gateway_resource.docs.id
+  http_method             = aws_api_gateway_method.docs_method.http_method
+  integration_http_method = "POST"
+  type                    = "AWS_PROXY"
+  uri                     = aws_lambda_function.guardianx.invoke_arn
+}
+
+
+resource "aws_api_gateway_deployment" "deployment" {
+  depends_on = [
+    aws_api_gateway_integration.lambda_integration,
+    aws_api_gateway_integration.docs_integration
+  ]
+  rest_api_id = aws_api_gateway_rest_api.guardianx_api.id
+  stage_name  = "prod"
+}
+
+
+resource "aws_api_gateway_api_key" "guardianx_key" {
+  name    = "guardianx-client-key"
+  enabled = true
+}
+
+resource "aws_api_gateway_usage_plan" "guardianx_plan" {
+  name = "guardianx-usage-plan"
+
+  api_stages {
+    api_id = aws_api_gateway_rest_api.guardianx_api.id
+    stage  = aws_api_gateway_deployment.deployment.stage_name
+  }
+
+  throttle {
+    burst_limit = 100
+    rate_limit  = 50
+  }
+}
+
+resource "aws_api_gateway_usage_plan_key" "guardianx_usage_key" {
+  key_id        = aws_api_gateway_api_key.guardianx_key.id
+  key_type      = "API_KEY"
+  usage_plan_id = aws_api_gateway_usage_plan.guardianx_plan.id
+}
+
+
+resource "aws_lambda_permission" "apigw" {
   statement_id  = "AllowAPIGatewayInvoke"
   action        = "lambda:InvokeFunction"
-  function_name = aws_lambda_function.guardianx.arn
+  function_name = aws_lambda_function.guardianx.function_name
   principal     = "apigateway.amazonaws.com"
-  source_arn    = "${aws_apigatewayv2_api.guardianx_api.execution_arn}/*/*"
+  source_arn    = "${aws_api_gateway_rest_api.guardianx_api.execution_arn}/*/*"
 }
