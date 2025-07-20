@@ -9,14 +9,15 @@ from mangum import Mangum
 from fastapi.middleware.cors import CORSMiddleware
 app = FastAPI(title="GuardianX Backend")
 
+origins = os.getenv("FRONTEND_URLS", "http://localhost:3000").split(",")
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],            # or ["https://your-frontend.com"]
-    allow_credentials=True,
+    allow_origins=origins,       # <-- no more "*"
+    allow_credentials=True,      # still need this to permit cookies
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
 app.include_router(user_router)
 app.include_router(maps_router)
 app.include_router(ally_router)
