@@ -52,3 +52,18 @@ async def get_distance_from_home_endpoint(
         "current_location": {"latitude": current_lat, "longitude": current_lng},
         "distance_from_home": distance
     }
+
+@router.get("/reverse-geocode")
+async def reverse_geocode(
+    lat: float = Query(...),
+    lng: float = Query(...)
+):
+    url = "https://maps.googleapis.com/maps/api/geocode/json"
+    params = {
+        "latlng": f"{lat},{lng}",
+        "key": GOOGLE_MAPS_API_KEY
+    }
+
+    async with httpx.AsyncClient() as client:
+        response = await client.get(url, params=params)
+        return response.json()
