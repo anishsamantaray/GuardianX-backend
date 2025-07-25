@@ -5,6 +5,7 @@ from app.utils.auth import  create_access_token, create_refresh_token, verify_to
 from app.utils.db import check_user_by_email, create_user_document, generate_and_store_email_otp, verify_email_otp
 from app.utils.email import send_otp_email
 from app.utils.db import get_dynamodb_table
+from decimal import Decimal
 router = APIRouter(prefix="/user", tags=["User"])
 user_table = get_dynamodb_table("users")
 

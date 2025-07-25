@@ -2,7 +2,7 @@ import boto3
 from app.schemas.user_schemas import UserSignupRequest
 import time
 import random
-
+from decimal import Decimal
 dynamodb = boto3.resource(
     "dynamodb",
     region_name="ap-south-1"  # Just keep the region
@@ -15,13 +15,18 @@ async def check_user_by_email(email: str) -> bool:
     return "Item" in response
 
 async def create_user_document(data: UserSignupRequest) -> str:
+    address = data.home_address.dict()
+
+    # Convert lat and long to Decimal to avoid TypeError
+    address["lat"] = Decimal(str(address["lat"]))
+    address["long"] = Decimal(str(address["long"]))
+
     user_data = {
         "email": data.email,
         "name": data.name,
         "phone": data.phone,
         "whatsapp_opt_in": data.whatsapp_opt_in,
-        # "emergency_contacts": [ec.dict() for ec in data.emergency_contacts],
-        "home_address": data.home_address.dict()
+        "home_address": address
     }
 
     user_table.put_item(Item=user_data)
