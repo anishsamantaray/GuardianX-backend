@@ -5,7 +5,7 @@ from app.utils.auth import  create_access_token, create_refresh_token, verify_to
 from app.utils.db import check_user_by_email, create_user_document, generate_and_store_email_otp, verify_email_otp
 from app.utils.email import send_otp_email
 from app.utils.db import get_dynamodb_table
-from decimal import Decimal
+from fastapi.responses import JSONResponse
 router = APIRouter(prefix="/user", tags=["User"])
 user_table = get_dynamodb_table("users")
 
@@ -30,11 +30,21 @@ async def verify_otp(payload: OTPVerifyRequest):
     access_token = create_access_token(payload.email)
     refresh_token = create_refresh_token(payload.email)
 
-    return {
+    response = JSONResponse(content={
         "verified": True,
         "access_token": access_token,
-        "refresh_token": refresh_token
-    }
+    })
+
+    response.set_cookie(
+        key="refresh_token",
+        value=refresh_token,
+        httponly=True,
+        secure=True,               # only over HTTPS in production
+        samesite="strict",         # can adjust to 'lax' if cross-site login is needed
+        max_age=15*24*60*60         # expires in 15 days
+    )
+
+    return response
 @router.post("/signup")
 async def signup_user(data: UserSignupRequest):
     exists = await check_user_by_email(data.email)
