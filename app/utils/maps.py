@@ -28,11 +28,12 @@ async def get_user_home_coordinates(email: str) -> tuple[float, float]:
         raise HTTPException(status_code=404, detail="User or home address not found")
 
     home_address = user["home_address"]
-    latitude = home_address.get("latitude")
-    longitude = home_address.get("longitude")
 
-    if latitude is None or longitude is None:
-        raise HTTPException(status_code=400, detail="Home latitude or longitude missing")
+    try:
+        latitude = float(home_address.get("lat", {}).get("N"))
+        longitude = float(home_address.get("long", {}).get("N"))
+    except (TypeError, ValueError):
+        raise HTTPException(status_code=400, detail="Home lat or long is invalid or missing")
 
     return latitude, longitude
 
