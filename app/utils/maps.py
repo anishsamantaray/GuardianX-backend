@@ -1,5 +1,7 @@
 import httpx
 import os
+from app.utils.db import get_dynamodb_table
+from fastapi import HTTPException
 
 GOOGLE_MAPS_API_KEY = os.getenv("GOOGLE_MAPS_API_KEY")
 
@@ -13,10 +15,6 @@ async def reverse_geocode(lat: float, lng: float) -> str:
         if data["results"]:
             return data["results"][0]["formatted_address"]
         return "Unknown location"
-
-
-from app.utils.db import get_dynamodb_table
-from fastapi import HTTPException
 
 user_table = get_dynamodb_table("users")  # or "userDetails" based on your setup
 
@@ -48,7 +46,7 @@ async def get_distance_from_home(home_lat: float, home_lng: float, current_lat: 
 
     async with httpx.AsyncClient() as client:
         response = await client.get(url, params=params)
-        data = await response.json()
+        data = response.json()
         if data["routes"]:
             return data["routes"][0]["legs"][0]["distance"]["text"]
         return "Distance not available"
