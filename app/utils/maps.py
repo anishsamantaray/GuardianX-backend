@@ -30,8 +30,8 @@ async def get_user_home_coordinates(email: str) -> tuple[float, float]:
     home_address = user["home_address"]
 
     try:
-        latitude = float(home_address.get("lat", {}).get("N"))
-        longitude = float(home_address.get("long", {}).get("N"))
+        latitude = float(home_address.get("lat"))
+        longitude = float(home_address.get("long"))
     except (TypeError, ValueError):
         raise HTTPException(status_code=400, detail="Home lat or long is invalid or missing")
 
