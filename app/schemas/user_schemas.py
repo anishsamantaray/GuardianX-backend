@@ -24,8 +24,6 @@ class OTPVerifyRequest(BaseModel):
     email: EmailStr
     otp: str
 
-class RefreshTokenRequest(BaseModel):
-    refresh_token: str
 
 class UpdateUserProfile(BaseModel):
     email: EmailStr

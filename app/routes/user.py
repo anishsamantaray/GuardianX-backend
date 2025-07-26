@@ -1,6 +1,5 @@
-from fastapi import APIRouter, HTTPException, Query
-from app.schemas.user_schemas import UserSignupRequest, OTPVerifyRequest, EmailRequest, RefreshTokenRequest, \
-    UpdateUserProfile
+from fastapi import APIRouter, HTTPException, Query ,Request
+from app.schemas.user_schemas import UserSignupRequest, OTPVerifyRequest, EmailRequest,UpdateUserProfile
 from app.utils.auth import  create_access_token, create_refresh_token, verify_token
 from app.utils.db import check_user_by_email, create_user_document, generate_and_store_email_otp, verify_email_otp
 from app.utils.email import send_otp_email
@@ -55,9 +54,13 @@ async def signup_user(data: UserSignupRequest):
     return { "message": "User registered successfully", "uid": uid }
 
 
-@router.post("/refresh-token")
-async def refresh_token(payload: RefreshTokenRequest):
-    email = verify_token(payload.refresh_token)
+@router.get("/refresh-token")
+async def refresh_token(request: Request):
+    token = request.cookies.get("refresh_token")
+    if not token:
+        raise HTTPException(status_code=401, detail="No refresh token")
+
+    email = verify_token(token)
     if not email:
         raise HTTPException(status_code=401, detail="Invalid refresh token")
 
