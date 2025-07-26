@@ -1,4 +1,4 @@
-from fastapi import APIRouter, HTTPException, Query ,Request
+from fastapi import APIRouter, HTTPException, Query ,Request , Response
 from app.schemas.user_schemas import UserSignupRequest, OTPVerifyRequest, EmailRequest,UpdateUserProfile
 from app.utils.auth import  create_access_token, create_refresh_token, verify_token
 from app.utils.db import check_user_by_email, create_user_document, generate_and_store_email_otp, verify_email_otp
@@ -111,3 +111,15 @@ async def update_user_profile(data: UpdateUserProfile):
     )
 
     return {"message": "Profile updated successfully"}
+
+@router.post("/logout")
+def logout(response: Response):
+    # (Optionally) invalidate the token or session in your DB/Redis here
+    response.delete_cookie(
+        key="authToken",
+        path="/",
+        secure=True,
+        httponly=True,
+        samesite="strict",
+    )
+    return {"detail": "logged out"}
