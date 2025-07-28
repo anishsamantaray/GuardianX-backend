@@ -1,3 +1,4 @@
+from dotenv import load_dotenv
 from fastapi import FastAPI ,Request ,HTTPException
 from app.routes.user import router as user_router
 from app.routes.maps import router as maps_router
@@ -7,9 +8,12 @@ from app.routes.incident import router as incident_router
 import os
 from mangum import Mangum
 from fastapi.middleware.cors import CORSMiddleware
+from dotenv import load_dotenv
+
+load_dotenv()
 app = FastAPI(title="GuardianX Backend")
 
-origins = os.getenv("FRONTEND_URLS", "http://localhost:3000").split(",")
+origins = os.getenv("FRONTEND_URLS").split(",")
 
 app.add_middleware(
     CORSMiddleware,
