@@ -13,7 +13,7 @@ from dotenv import load_dotenv
 load_dotenv()
 app = FastAPI(title="GuardianX Backend")
 
-origins = os.getenv("FRONTEND_URLS").split(",")
+origins = os.getenv("FRONTEND_URLS", "http://localhost:3000").split(",")
 
 app.add_middleware(
     CORSMiddleware,
