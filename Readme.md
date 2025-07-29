@@ -6,7 +6,7 @@ GuardianX is a secure, scalable backend system built with **FastAPI**, designed 
 
 ---
 
-## 🖐️ Architecture
+## 🕐️ Architecture
 
 **Core Stack:**
 
@@ -30,6 +30,20 @@ GuardianX is a secure, scalable backend system built with **FastAPI**, designed 
 
 ---
 
+## 🖼️ Architecture Diagram
+
+### 🧱 Layered System Design (Infrastructure + Functional Flow)
+
+<details>
+
+**SVG Version (for zoomable detail):**
+
+![GuardianX Architecture Diagram SVG](Untitled-2025-07-29-0656.svg)
+
+</details>
+
+---
+
 ## 🚀 How to Clone and Run Locally
 
 ```bash
@@ -40,7 +54,7 @@ source venv/bin/activate  # or venv\Scripts\activate
 pip install -r requirements.txt
 ```
 
-### 🧪 Run with Uvicorn
+### 🥪 Run with Uvicorn
 
 ```bash
 uvicorn app.main:app --reload
