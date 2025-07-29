@@ -34,13 +34,13 @@ GuardianX is a secure, scalable backend system built with **FastAPI**, designed 
 
 ### 🧱 Layered System Design (Infrastructure + Functional Flow)
 
-<details>
+
 
 **SVG Version (for zoomable detail):**
 
 ![GuardianX Architecture Diagram SVG](Untitled-2025-07-29-0656.svg)
 
-</details>
+
 
 ---
 
