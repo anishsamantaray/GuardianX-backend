@@ -111,3 +111,31 @@ resource "aws_lambda_permission" "apigw" {
   principal     = "apigateway.amazonaws.com"
   source_arn    = "${aws_api_gateway_rest_api.guardianx_api.execution_arn}/*/*"
 }
+
+resource "aws_dynamodb_table" "incident" {
+  name         = var.incident_table_name
+  hash_key     = "incident_id"
+  billing_mode = "PAY_PER_REQUEST"
+
+  # existing attribute for your PK
+  attribute {
+    name = "incident_id"
+    type = "S"
+  }
+
+  # add this attribute for your GSI
+  attribute {
+    name = "email"
+    type = "S"
+  }
+
+  # now define the GSI
+  global_secondary_index {
+    name               = "email-index"
+    hash_key           = "email"
+    projection_type    = "ALL"
+    # if you switch to PROVISIONED, uncomment these:
+    # read_capacity   = 5
+    # write_capacity  = 5
+  }
+}
