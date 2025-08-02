@@ -48,6 +48,12 @@ jobs:
           cd terraform
           terraform init
 
+      - name: Terraform Import IncidentTable (idempotent)
+        run: |
+         cd terraform
+          terraform import aws_dynamodb_table.incident "${{ secrets.INCIDENT_TABLE_NAME }}" \
+          || echo "Table already imported"
+
       - name: Generate terraform.tfvars from GitHub Secrets
         run: |
           cat <<EOF > terraform/terraform.tfvars
