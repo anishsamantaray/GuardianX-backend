@@ -3,7 +3,7 @@ from app.schemas.incident_schemas import IncidentReport
 from app.utils.db import get_dynamodb_table
 import boto3
 import uuid
-
+from decimal import Decimal
 incident_table = get_dynamodb_table("incidents")
 router = APIRouter(prefix="/incident", tags=["incident"])
 
@@ -18,8 +18,9 @@ async def report_incident(data: IncidentReport):
         "incident_type": data.incident_type,
         "description": data.description,
         "location": {
-            "latitude": data.location.latitude,
-            "longitude": data.location.longitude
+           # wrap floats as Decimal for DynamoDB
+           "latitude":  Decimal(str(data.location.latitude)),
+           "longitude": Decimal(str(data.location.longitude))
         },
         "timestamp": data.timestamp.isoformat(),
         "resolved": False
