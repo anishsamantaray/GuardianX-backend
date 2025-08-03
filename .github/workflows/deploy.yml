@@ -52,6 +52,7 @@ jobs:
       - name: Generate terraform.tfvars from GitHub Secrets
         run: |
           cat <<EOF > terraform/terraform.tfvars
+          project_name = "guardianx"
           incident_table_name = "${{ secrets.INCIDENT_TABLE_NAME }}"
           lambda_env_vars = {
             SMTP_HOST = "${{ secrets.SMTP_HOST }}"
