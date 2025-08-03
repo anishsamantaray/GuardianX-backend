@@ -17,3 +17,8 @@ variable "incident_table_name" {
   type        = string
   description = "DynamoDB table name for incidents"
 }
+
+variable "project_name" {
+  description = "The name of the project used for resource naming"
+  type        = string
+}

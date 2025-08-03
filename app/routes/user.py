@@ -5,6 +5,8 @@ from app.utils.db import check_user_by_email, create_user_document, generate_and
 from app.utils.email import send_otp_email
 from app.utils.db import get_dynamodb_table
 from fastapi.responses import JSONResponse
+import boto3, uuid, os
+from pydantic import EmailStr
 router = APIRouter(prefix="/user", tags=["User"])
 user_table = get_dynamodb_table("users")
 
@@ -123,3 +125,37 @@ def logout(response: Response):
         samesite="strict",
     )
     return {"detail": "logged out"}
+
+@router.post("/upload-profile-pic")
+async def upload_profile_picture(email: EmailStr, filename: str = Query(...)):
+    bucket_name = "guardianx-profile-pics"
+    if not bucket_name:
+        raise HTTPException(status_code=500, detail="S3 bucket not configured")
+
+    unique_id = uuid.uuid4().hex
+    key = f"profile_pics/{unique_id}_{filename}"
+
+    s3 = boto3.client("s3")
+    try:
+        presigned_url = s3.generate_presigned_url(
+            "put_object",
+            Params={"Bucket": bucket_name, "Key": key, "ContentType": "image/jpeg"},
+            ExpiresIn=300
+        )
+
+        s3_url = f"https://{bucket_name}.s3.amazonaws.com/{key}"
+
+        # Update DynamoDB dpS3Url
+        user_table.update_item(
+            Key={"email": email},
+            UpdateExpression="SET dpS3Url = :url",
+            ExpressionAttributeValues={":url": s3_url}
+        )
+
+        return {
+            "uploadUrl": presigned_url,
+            "dpS3Url": s3_url
+        }
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))

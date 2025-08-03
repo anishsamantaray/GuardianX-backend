@@ -27,6 +27,29 @@ resource "aws_iam_role_policy_attachment" "lambda_dynamodb_access" {
   policy_arn = "arn:aws:iam::aws:policy/AmazonDynamoDBFullAccess"
 }
 
+resource "aws_iam_policy" "lambda_s3_policy" {
+  name   = "guardianx-lambda-s3-access"
+  policy = jsonencode({
+    Version = "2012-10-17",
+    Statement: [
+      {
+        Effect = "Allow",
+        Action = [
+          "s3:PutObject",
+          "s3:GetObject"
+        ],
+        Resource = "${aws_s3_bucket.profile_pics.arn}/*"
+      }
+    ]
+  })
+}
+
+resource "aws_iam_role_policy_attachment" "lambda_s3_attach" {
+  role       = aws_iam_role.lambda_exec.name
+  policy_arn = aws_iam_policy.lambda_s3_policy.arn
+}
+
+
 resource "aws_lambda_function" "guardianx" {
   function_name = "guardianx-fastapi"
   package_type  = "Image"
@@ -139,3 +162,19 @@ resource "aws_dynamodb_table" "incident" {
     # write_capacity  = 5
   }
 }
+
+resource "aws_s3_bucket" "profile_pics" {
+  bucket = "${var.project_name}-profile-pics"
+  tags   = { Name = "Profile Pictures" }
+}
+
+resource "aws_s3_bucket_cors_configuration" "cors" {
+  bucket = aws_s3_bucket.profile_pics.id
+  cors_rule {
+    allowed_methods = ["GET", "PUT"]
+    allowed_origins = ["*"]
+    allowed_headers = ["*"]
+    max_age_seconds = 3000
+  }
+}
+
