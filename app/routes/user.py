@@ -100,7 +100,7 @@ async def update_user_profile(data: UpdateUserProfile):
 
     if data.home_address is not None:
         update_expr.append("home_address = :addr")
-        expr_attr_values[":addr"] = data.home_address
+        expr_attr_values[":addr"] = data.home_address.dict()
 
     if not update_expr:
         raise HTTPException(status_code=400, detail="No fields to update")
