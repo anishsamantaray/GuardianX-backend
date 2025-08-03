@@ -30,4 +30,4 @@ class UpdateUserProfile(BaseModel):
     name: Optional[str] = None
     phone: Optional[str] = None
     whatsapp_opt_in: Optional[bool] = None
-    home_address: Optional[dict] = None
+    home_address: Optional[Address] = None
