@@ -105,15 +105,20 @@ async def update_user_profile(data: UpdateUserProfile):
     if not update_expr:
         raise HTTPException(status_code=400, detail="No fields to update")
 
-    user_table.update_item(
-        Key={"email": data.email},
-        UpdateExpression="SET " + ", ".join(update_expr),
-        ExpressionAttributeNames=expr_attr_names if expr_attr_names else None,
-        ExpressionAttributeValues=expr_attr_values
-    )
+    # Build update parameters safely
+    update_params = {
+        "Key": {"email": data.email},
+        "UpdateExpression": "SET " + ", ".join(update_expr),
+        "ExpressionAttributeValues": expr_attr_values
+    }
+
+    # Only include ExpressionAttributeNames if not empty
+    if expr_attr_names:
+        update_params["ExpressionAttributeNames"] = expr_attr_names
+
+    user_table.update_item(**update_params)
 
     return {"message": "Profile updated successfully"}
-
 @router.post("/logout")
 def logout(response: Response):
     # (Optionally) invalidate the token or session in your DB/Redis here
