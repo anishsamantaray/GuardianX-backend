@@ -172,7 +172,7 @@ resource "aws_s3_bucket_cors_configuration" "cors" {
   bucket = aws_s3_bucket.profile_pics.id
   cors_rule {
     allowed_methods = ["GET", "PUT"]
-    allowed_origins = ["*"]
+    allowed_origins = ["http://localhost:3000"]
     allowed_headers = ["*"]
     max_age_seconds = 3000
   }
