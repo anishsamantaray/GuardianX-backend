@@ -19,13 +19,12 @@ async def send_ally_request(body: AllyRequestInput):
     return {"message": "Ally request sent."}
 
 @router.post("/respond")
-async def respond_to_ally_request_route(
-    body: AllyResponseInput,
-    to_email: EmailStr = Query(..., description="Recipient's email (current user)")
-):
-    respond_to_ally_request(to_email.lower(), body.from_email.lower(), body.response)
-    return {"message": f"Request {body.response}."}
+async def respond_to_ally_request_route(body: AllyResponseInput):
+    if body.from_email.lower() == body.to_email.lower():
+        raise HTTPException(status_code=400, detail="from_email and to_email cannot be the same")
 
+    respond_to_ally_request(body.to_email.lower(), body.from_email.lower(), body.response)
+    return {"message": f"Request {body.response}."}
 @router.get("/requests/received")
 async def get_ally_requests(
     to_email: EmailStr = Query(..., description="Recipient's email (current user)")
