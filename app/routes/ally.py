@@ -1,37 +1,41 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, HTTPException, Query
+from pydantic import EmailStr
 from app.schemas.ally_schemas import AllyRequestInput, AllyResponseInput
-from app.dependencies.auth import get_current_user
-from app.utils.ally_utils import create_ally_request, respond_to_ally_request, get_pending_requests, get_accepted_allies
+from app.utils.ally_utils import (
+    create_ally_request,
+    respond_to_ally_request,
+    get_pending_requests,
+    get_accepted_allies,
+)
 
 router = APIRouter(prefix="/allies", tags=["allies"])
-@router.post("/request")
-async def send_ally_request(
-    body: AllyRequestInput,
-    current_user: dict = Depends(get_current_user)
-):
-    from_email = current_user["email"]
-    to_email = body.to_email.lower()
 
-    create_ally_request(from_email, to_email)
-    return { "message": "Ally request sent." }
+@router.post("/request")
+async def send_ally_request(body: AllyRequestInput):
+    if body.from_email.lower() == body.to_email.lower():
+        raise HTTPException(status_code=400, detail="from_email and to_email cannot be the same")
+
+    create_ally_request(body.from_email.lower(), body.to_email.lower())
+    return {"message": "Ally request sent."}
 
 @router.post("/respond")
 async def respond_to_ally_request_route(
     body: AllyResponseInput,
-    current_user: dict = Depends(get_current_user)
+    to_email: EmailStr = Query(..., description="Recipient's email (current user)")
 ):
-    to_email = current_user["email"]
-    respond_to_ally_request(to_email, body.from_email, body.response)
-    return { "message": f"Request {body.response}." }
+    respond_to_ally_request(to_email.lower(), body.from_email.lower(), body.response)
+    return {"message": f"Request {body.response}."}
 
 @router.get("/requests")
-async def get_ally_requests(current_user: dict = Depends(get_current_user)):
-    to_email = current_user["email"]
-    pending = get_pending_requests(to_email)
-    return { "requests": pending }
+async def get_ally_requests(
+    to_email: EmailStr = Query(..., description="Recipient's email (current user)")
+):
+    pending = get_pending_requests(to_email.lower())
+    return {"requests": pending}
 
 @router.get("/allies")
-async def list_allies(current_user: dict = Depends(get_current_user)):
-    email = current_user["email"]
-    allies = get_accepted_allies(email)
+async def list_allies(
+    email: EmailStr = Query(..., description="Email whose allies to list")
+):
+    allies = get_accepted_allies(email.lower())
     return {"allies": allies}

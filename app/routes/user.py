@@ -7,6 +7,8 @@ from app.utils.db import get_dynamodb_table
 from fastapi.responses import JSONResponse
 import boto3, uuid, os
 from pydantic import EmailStr
+from decimal import Decimal
+from boto3.dynamodb.conditions import Attr
 router = APIRouter(prefix="/user", tags=["User"])
 user_table = get_dynamodb_table("users")
 
@@ -85,6 +87,15 @@ async def update_user_profile(data: UpdateUserProfile):
     expr_attr_values = {}
     expr_attr_names = {}
 
+    def convert_floats(obj):
+        if isinstance(obj, float):
+            return Decimal(str(obj))
+        elif isinstance(obj, dict):
+            return {k: convert_floats(v) for k, v in obj.items()}
+        elif isinstance(obj, list):
+            return [convert_floats(i) for i in obj]
+        return obj
+
     if data.name is not None:
         update_expr.append("#name = :name")
         expr_attr_names["#name"] = "name"
@@ -99,20 +110,19 @@ async def update_user_profile(data: UpdateUserProfile):
         expr_attr_values[":opt"] = data.whatsapp_opt_in
 
     if data.home_address is not None:
+        safe_address = convert_floats(data.home_address.dict())
         update_expr.append("home_address = :addr")
-        expr_attr_values[":addr"] = data.home_address.dict()
+        expr_attr_values[":addr"] = safe_address
 
     if not update_expr:
         raise HTTPException(status_code=400, detail="No fields to update")
 
-    # Build update parameters safely
     update_params = {
         "Key": {"email": data.email},
         "UpdateExpression": "SET " + ", ".join(update_expr),
         "ExpressionAttributeValues": expr_attr_values
     }
 
-    # Only include ExpressionAttributeNames if not empty
     if expr_attr_names:
         update_params["ExpressionAttributeNames"] = expr_attr_names
 
@@ -161,6 +171,53 @@ async def upload_profile_picture(email: EmailStr, filename: str = Query(...)):
             "uploadUrl": presigned_url,
             "dpS3Url": s3_url
         }
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+from boto3.dynamodb.conditions import Attr
+
+@router.get("/suggestions")
+async def get_email_suggestions(query: str = Query(..., min_length=3)):
+    try:
+        # Scan with filter on 'email' OR 'name'
+        resp = user_table.scan(
+            ProjectionExpression="email, #nm",
+            ExpressionAttributeNames={"#nm": "name"},  # 'name' is reserved keyword
+            FilterExpression=(
+                Attr("email").contains(query.lower()) |
+                Attr("name").contains(query)
+            )
+        )
+
+        suggestions = [
+            {
+                "email": item["email"],
+                "name": item.get("name", "")
+            }
+            for item in resp.get("Items", [])
+        ]
+
+        # If more pages exist, continue scanning
+        while "LastEvaluatedKey" in resp:
+            resp = user_table.scan(
+                ProjectionExpression="email, #nm",
+                ExpressionAttributeNames={"#nm": "name"},
+                FilterExpression=(
+                    Attr("email").contains(query.lower()) |
+                    Attr("name").contains(query)
+                ),
+                ExclusiveStartKey=resp["LastEvaluatedKey"]
+            )
+            suggestions.extend([
+                {
+                    "email": item["email"],
+                    "name": item.get("name", "")
+                }
+                for item in resp.get("Items", [])
+            ])
+
+        return {"suggestions": suggestions}
 
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
