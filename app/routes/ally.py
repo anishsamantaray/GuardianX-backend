@@ -5,7 +5,7 @@ from app.utils.ally_utils import (
     create_ally_request,
     respond_to_ally_request,
     get_pending_requests,
-    get_accepted_allies,
+    get_accepted_allies, get_sent_pending_requests,
 )
 
 router = APIRouter(prefix="/allies", tags=["allies"])
@@ -26,7 +26,7 @@ async def respond_to_ally_request_route(
     respond_to_ally_request(to_email.lower(), body.from_email.lower(), body.response)
     return {"message": f"Request {body.response}."}
 
-@router.get("/requests")
+@router.get("/requests/received")
 async def get_ally_requests(
     to_email: EmailStr = Query(..., description="Recipient's email (current user)")
 ):
@@ -39,3 +39,8 @@ async def list_allies(
 ):
     allies = get_accepted_allies(email.lower())
     return {"allies": allies}
+
+@router.get("/requests/sent")
+async def get_sent_requests(from_email: EmailStr = Query(...)):
+    items = get_sent_pending_requests(from_email.lower())
+    return {"requests": items}
