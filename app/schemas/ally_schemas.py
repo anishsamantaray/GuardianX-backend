@@ -6,4 +6,5 @@ class AllyRequestInput(BaseModel):
 
 class AllyResponseInput(BaseModel):
     from_email: EmailStr
+    to_email: EmailStr
     response: Literal["accepted", "rejected"]
