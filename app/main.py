@@ -1,4 +1,3 @@
-from dotenv import load_dotenv
 from fastapi import FastAPI ,Request ,HTTPException
 from app.routes.user import router as user_router
 from app.routes.maps import router as maps_router
@@ -13,9 +12,7 @@ from dotenv import load_dotenv
 load_dotenv()
 app = FastAPI(title="GuardianX Backend")
 
-origins = os.getenv(
-    "FRONTEND_URLS","https://main.d2h82p5tor292l.amplifyapp.com"
-).split(",")
+origins = os.getenv("FRONTEND_URLS")
 
 app.add_middleware(
     CORSMiddleware,
