@@ -14,13 +14,12 @@ load_dotenv()
 app = FastAPI(title="GuardianX Backend")
 
 origins = os.getenv(
-    "FRONTEND_URLS",
-    "http://localhost:3000,https://main.d2h82p5tor292l.amplifyapp.com"
+    "FRONTEND_URLS","https://main.d2h82p5tor292l.amplifyapp.com"
 ).split(",")
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[o.strip() for o in origins],       # <-- no more "*"
+    allow_origins=origins,       # <-- no more "*"
     allow_credentials=True,      # still need this to permit cookies
     allow_methods=["*"],
     allow_headers=["*"],
