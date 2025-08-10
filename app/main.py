@@ -20,7 +20,7 @@ origins = os.getenv(
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=origins,       # <-- no more "*"
+    allow_origins=[o.strip() for o in origins],       # <-- no more "*"
     allow_credentials=True,      # still need this to permit cookies
     allow_methods=["*"],
     allow_headers=["*"],
