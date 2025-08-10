@@ -59,8 +59,13 @@ resource "aws_lambda_function" "guardianx" {
 
   source_code_hash = filebase64sha256("${path.module}/../.build_id")
 
-  environment {
-    variables = var.lambda_env_vars
+   environment {
+    variables = merge(
+      var.lambda_env_vars,
+      {
+        ALLY_EMAIL_QUEUE_URL = aws_sqs_queue.ally_email_queue.url
+      }
+    )
   }
 }
 
@@ -173,11 +178,101 @@ resource "aws_s3_bucket_cors_configuration" "cors" {
 
   cors_rule {
     allowed_methods = ["GET", "PUT"]
-    allowed_origins = [
-      "http://localhost:3000",
-      "https://main.d2h82p5tor292l.amplifyapp.com"
-    ]
+    allowed_origins = ["*"]
     allowed_headers = ["*"]
+    expose_headers = ["ETag"]
     max_age_seconds = 3000
   }
+}
+
+resource "aws_sqs_queue" "ally_email_dlq" {
+  name                      = "${var.project_name}-ally-email-dlq"
+  message_retention_seconds = 1209600
+}
+
+resource "aws_sqs_queue" "ally_email_queue" {
+  name                       = "${var.project_name}-ally-email-queue"
+  visibility_timeout_seconds = 60
+  redrive_policy             = jsonencode({
+    deadLetterTargetArn = aws_sqs_queue.ally_email_dlq.arn
+    maxReceiveCount     = 5
+  })
+}
+
+resource "aws_iam_policy" "api_can_send_sqs" {
+  name   = "${var.project_name}-api-can-send-sqs"
+  policy = jsonencode({
+    Version = "2012-10-17",
+    Statement = [{
+      Effect   = "Allow",
+      Action   = ["sqs:SendMessage"],
+      Resource = aws_sqs_queue.ally_email_queue.arn
+    }]
+  })
+}
+
+resource "aws_iam_role_policy_attachment" "attach_api_can_send_sqs" {
+  role       = aws_iam_role.lambda_exec.name
+  policy_arn = aws_iam_policy.api_can_send_sqs.arn
+}
+
+data "aws_iam_policy_document" "worker_assume" {
+  statement {
+    actions = ["sts:AssumeRole"]
+    principals { type = "Service", identifiers = ["lambda.amazonaws.com"] }
+  }
+}
+
+resource "aws_iam_role" "ally_worker_role" {
+  name               = "${var.project_name}-ally-worker-role"
+  assume_role_policy = data.aws_iam_policy_document.worker_assume.json
+}
+
+resource "aws_iam_role_policy_attachment" "worker_logs" {
+  role       = aws_iam_role.ally_worker_role.name
+  policy_arn = "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+}
+
+resource "aws_iam_policy" "worker_sqs_consume" {
+  name   = "${var.project_name}-worker-sqs-consume"
+  policy = jsonencode({
+    Version   = "2012-10-17",
+    Statement = [{
+      Effect   = "Allow",
+      Action   = [
+        "sqs:ReceiveMessage",
+        "sqs:DeleteMessage",
+        "sqs:GetQueueAttributes",
+        "sqs:ChangeMessageVisibility"
+      ],
+      Resource = aws_sqs_queue.ally_email_queue.arn
+    }]
+  })
+}
+
+resource "aws_iam_role_policy_attachment" "attach_worker_sqs_consume" {
+  role       = aws_iam_role.ally_worker_role.name
+  policy_arn = aws_iam_policy.worker_sqs_consume.arn
+}
+
+resource "aws_lambda_function" "ally_email_worker" {
+  function_name = "${var.project_name}-ally-email-worker"
+  package_type  = "Image"
+  image_uri     = var.image_uri                 # same image you already build/push
+  role          = aws_iam_role.ally_worker_role.arn
+  timeout       = 30
+  memory_size   = 256
+
+  # Use worker handler inside the same image
+  image_config {
+    command = ["lambda_handlers.ally_email_worker.handler"]
+  }
+}
+
+resource "aws_lambda_event_source_mapping" "ally_sqs_trigger" {
+  event_source_arn                    = aws_sqs_queue.ally_email_queue.arn
+  function_name                       = aws_lambda_function.ally_email_worker.arn
+  batch_size                          = 10
+  maximum_batching_window_in_seconds  = 2
+  enabled                             = true
 }
