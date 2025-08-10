@@ -12,13 +12,16 @@ from dotenv import load_dotenv
 load_dotenv()
 app = FastAPI(title="GuardianX Backend")
 
-origins = os.getenv("FRONTEND_URLS")
+origins = [
+    "http://localhost:3000",
+    "https://main.d2h82p5tor292l.amplifyapp.com"
+]
 
 app.add_middleware(
     CORSMiddleware,
     allow_origins=origins,       # <-- no more "*"
     allow_credentials=True,      # still need this to permit cookies
-    allow_methods=["*"],
+    allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
     allow_headers=["*"],
 )
 app.include_router(user_router)
