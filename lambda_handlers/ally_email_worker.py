@@ -1,7 +1,10 @@
 import json
 import os
-from app.utils.email import send_html_email  # uses your SMTP env vars
+import smtplib
+from email.mime.text import MIMEText
+from email.utils import formataddr
 
+# Email template
 SUBJECT_TPL = "GuardianX – SOS Alert from {user_email}"
 HTML_TPL = """\
 <html><body>
@@ -12,25 +15,42 @@ HTML_TPL = """\
 </body></html>
 """
 
-def _build_email(user_email: str, address: str):
+# Send email using SMTP
+def send_html_email(to_email, subject, html_body):
+    host = os.environ["SMTP_HOST"]
+    port = int(os.environ.get("SMTP_PORT", "587"))
+    username = os.environ["SMTP_USERNAME"]
+    password = os.environ["SMTP_PASSWORD"]
+    from_email = os.environ.get("SMTP_FROM", username)
+    from_name = os.environ.get("SMTP_FROM_NAME", "GuardianX")
+
+    msg = MIMEText(html_body, "html")
+    msg["Subject"] = subject
+    msg["From"] = formataddr((from_name, from_email))
+    msg["To"] = to_email
+
+    with smtplib.SMTP(host, port) as server:
+        server.ehlo()
+        server.starttls()
+        server.ehlo()
+        server.login(username, password)
+        server.sendmail(from_email, [to_email], msg.as_string())
+
+# Build and send the ally email
+def _process_message(msg):
+    if msg.get("type") != "ALLY_SOS_EMAIL":
+        return
+
+    user_email = msg["user_email"]
+    ally_email = msg["ally_email"]
+    address = msg["address"]
+
     subject = SUBJECT_TPL.format(user_email=user_email)
     body = HTML_TPL.format(user_email=user_email, address=address)
-    return subject, body
+    send_html_email(ally_email, subject, body)
 
-def _process_message(msg: dict):
-    if msg.get("type") != "ALLY_SOS_EMAIL":
-        return  # ignore unknown message types
-
-    ally_email = msg["ally_email"]         # string (one ally per message)
-    user_email = msg["user_email"]
-    address    = msg["address"]            # human-readable address
-
-    subject, html_body = _build_email(user_email, address)
-    # Your util likely handles SMTP via env vars (SMTP_HOST, SMTP_USER, etc.)
-    send_html_email(ally_email, subject, html_body)
-
+# Lambda handler
 def handler(event, context):
-    # SQS invokes with a batch of up to N messages
     for record in event.get("Records", []):
         body = json.loads(record["body"])
         _process_message(body)

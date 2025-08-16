@@ -271,6 +271,14 @@ resource "aws_lambda_function" "ally_email_worker" {
   image_config {
     command = ["lambda_handlers.ally_email_worker.handler"]
   }
+   environment {
+    variables = merge(
+      var.lambda_env_vars,
+      {
+        ALLY_EMAIL_QUEUE_URL = aws_sqs_queue.ally_email_queue.url
+      }
+    )
+  }
 }
 
 resource "aws_lambda_event_source_mapping" "ally_sqs_trigger" {

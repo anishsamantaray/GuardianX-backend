@@ -35,8 +35,8 @@ async def enqueue_ally_notifications(email: str, timestamp: str, location: dict)
             user_email=email,
             ally_email=ally,  # pass as string now
             address_text=address,
-            lat=lat,
-            lng=lng,
+            lat=float(lat),
+            lng=float(lng),
             sos_timestamp=timestamp,
         )
 
