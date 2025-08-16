@@ -19,8 +19,8 @@ HTML_TPL = """\
 def send_html_email(to_email, subject, html_body):
     host = os.environ["SMTP_HOST"]
     port = int(os.environ.get("SMTP_PORT", "587"))
-    username = os.environ["SMTP_USERNAME"]
-    password = os.environ["SMTP_PASSWORD"]
+    username = os.environ["SMTP_USER"]
+    password = os.environ["SMTP_PASS"]
     from_email = os.environ.get("SMTP_FROM", username)
     from_name = os.environ.get("SMTP_FROM_NAME", "GuardianX")
 
