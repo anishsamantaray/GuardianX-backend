@@ -2,9 +2,9 @@ from fastapi import APIRouter, Query
 import httpx
 import os
 from dotenv import load_dotenv
-
 from app.utils.maps import get_user_home_coordinates, get_distance_from_home
-from app.utils.redis_circuit_breaker import execute_with_breaker  # ✅ Circuit breaker import
+from app.utils.redis_cache import get_cache, set_cache
+from app.utils.redis_circuit_breaker import execute_with_breaker
 
 load_dotenv()
 GOOGLE_MAPS_API_KEY = os.getenv('GOOGLE_PLACES_API_KEY')
@@ -91,16 +91,36 @@ async def get_distance_from_home_endpoint(
     current_lat: float = Query(...),
     current_lng: float = Query(...),
 ):
+    # Round coordinates to reduce unnecessary cache keys
+    rounded_lat = round(current_lat, 4)
+    rounded_lng = round(current_lng, 4)
+
+    cache_key = f"cache:distance:{email}:{rounded_lat}:{rounded_lng}"
+
+    # 1️⃣ Try cache first (no change to response)
+    cached = await get_cache(cache_key)
+    if cached:
+        print(f"[CACHE][DISTANCE] Returning cached result for {email} ({rounded_lat},{rounded_lng})")
+        return cached  # ✅ same structure as live result
+
+    print(f"[LIVE][DISTANCE] Cache miss for {email} ({rounded_lat},{rounded_lng}) → computing fresh")
+
+    # 2️⃣ Compute normally
     home_lat, home_lng = await get_user_home_coordinates(email)
     distance = await get_distance_from_home(home_lat, home_lng, current_lat, current_lng)
 
-    return {
+    response_data = {
         "email": email,
         "home_location": {"latitude": home_lat, "longitude": home_lng},
         "current_location": {"latitude": current_lat, "longitude": current_lng},
         "distance_from_home": distance,
     }
 
+    # 3️⃣ Cache for short time (e.g. 60 seconds)
+    await set_cache(cache_key, response_data, ttl=60)
+    print(f"[CACHE][DISTANCE] Cached distance for {email} ({rounded_lat},{rounded_lng}) for 60s")
+
+    return response_data
 
 # ---------------- Reverse Geocode ----------------
 @router.get("/reverse-geocode")
