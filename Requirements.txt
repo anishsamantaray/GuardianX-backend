@@ -6,3 +6,4 @@ mangum
 pydantic[email]
 python-jose
 httpx
+redis
