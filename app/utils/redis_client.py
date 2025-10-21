@@ -10,6 +10,6 @@ REDIS_PORT = int(os.getenv("REDIS_PORT", 16074))
 redis_client = redis.Redis(
     host=REDIS_HOST,
     port=REDIS_PORT,
-    ssl=True,
+    ssl=False,
     decode_responses=True,
 )
