@@ -2,7 +2,7 @@
 
 **Tagline**: *Built for safety. Designed for freedom.*
 
-GuardianX is a secure, scalable backend system built with **FastAPI**, designed to power a real-time personal safety app. It features OTP-based authentication, user registration, real-time SOS tracking, incident reporting, and ally-based location tracking. The system is deployed serverlessly on **AWS Lambda** using Docker images stored in **ECR**, triggered via **API Gateway**, and managed using **Terraform**.
+GuardianX is a secure, scalable backend system built with **FastAPI**, designed to power a real-time personal safety app. It supports **OTP-based authentication**, **user registration**, **real-time SOS tracking**, **incident reporting**, and **ally-based location tracking**. The backend integrates **Redis caching** and **Redis-based circuit breakers** for high availability and low latency. The system is deployed serverlessly on **AWS Lambda** using **Docker images stored in ECR**, triggered via **API Gateway**, and managed using **Terraform**.
 
 ---
 
@@ -14,10 +14,12 @@ GuardianX is a secure, scalable backend system built with **FastAPI**, designed 
 * **Deployment**: AWS Lambda + API Gateway
 * **Container**: AWS ECR (Docker)
 * **Infrastructure as Code**: Terraform
-* **Database**: DynamoDB (users, sos\_events, incidents, otp\_requests)
+* **Database**: DynamoDB (users, sos_events, incidents, otp_requests)
+* **Cache & Circuit Breaker**: Redis Cloud
 * **Email**: SMTP (Gmail)
 * **Auth**: JWT + Refresh Tokens
 * **Geolocation**: Google Maps API (proxied)
+* **Monitoring**: CloudWatch + SNS Alerts
 
 **Flow:**
 
@@ -25,8 +27,10 @@ GuardianX is a secure, scalable backend system built with **FastAPI**, designed 
 2. User requests OTP → email OTP sent via Gmail SMTP
 3. OTP verified → JWT + refresh token issued
 4. User triggers SOS → location + timestamp stored in `sos_events`
-5. Ally users receive email alerts and can track real-time location
-6. Optional: location heartbeat + incident reporting
+5. Allies receive email alerts and can track real-time location
+6. Redis caching speeds up repeated GET requests
+7. Redis circuit breakers prevent cascading failures from unhealthy services
+8. Optional: location heartbeat + incident reporting
 
 ---
 
@@ -34,13 +38,9 @@ GuardianX is a secure, scalable backend system built with **FastAPI**, designed 
 
 ### 🧱 Layered System Design (Infrastructure + Functional Flow)
 
-
-
 **SVG Version (for zoomable detail):**
 
 ![GuardianX Architecture Diagram SVG](Untitled-2025-07-29-0656.svg)
-
-
 
 ---
 
@@ -54,7 +54,7 @@ source venv/bin/activate  # or venv\Scripts\activate
 pip install -r requirements.txt
 ```
 
-### 🥪 Run with Uvicorn
+### 🥚 Run with Uvicorn
 
 ```bash
 uvicorn app.main:app --reload
@@ -81,6 +81,11 @@ JWT_SECRET_KEY=supersecurekey
 JWT_ALGORITHM=HS256
 JWT_ACCESS_EXPIRE_MINUTES=30
 JWT_REFRESH_EXPIRE_MINUTES=10080
+
+# Redis
+REDIS_HOST=your_redis_host
+REDIS_PORT=your_redis_port
+REDIS_PASSWORD=your_redis_password
 
 # Google Maps
 GOOGLE_MAPS_API_KEY=your_maps_key
@@ -125,11 +130,11 @@ Terraform will output the live HTTP endpoint linked to Lambda.
 | `users`        | email         | –         | User registration info |
 | `otp_requests` | email         | –         | OTP storage + TTL      |
 | `sos_events`   | email         | timestamp | SOS trigger logs       |
-| `incidents`    | incident\_id  | –         | Reported incidents     |
+| `incidents`    | incident_id   | –         | Reported incidents     |
 
 ---
 
-## 📚 API Endpoints Overview
+## 📙 API Endpoints Overview
 
 | Method | Endpoint                  | Description                     |
 | ------ | ------------------------- | ------------------------------- |
@@ -144,31 +149,49 @@ Terraform will output the live HTTP endpoint linked to Lambda.
 | GET    | /sos/track/{email}        | Track live SOS location of user |
 | POST   | /incident/report          | Submit past safety report       |
 | GET    | /incident/history/{email} | View user's incident history    |
-| GET    | /incident/{incident\_id}  | Get specific incident details   |
+| GET    | /incident/{incident_id}   | Get specific incident details   |
 | GET    | /maps/autocomplete        | Proxy for address typing        |
 | GET    | /maps/details             | Get full address from ID        |
 | GET    | /maps/distance-from-home  | Distance from home via road     |
 
 ---
 
-## 📌 Roadmap (Next Features)
+## 📌 Redis Integration
+
+**Caching Layer**
+
+* Write-through caching for user and incident reads
+* TTL-based invalidation (5–10 min)
+* Reduces DynamoDB read load and improves response latency
+
+**Circuit Breakers**
+
+* Implemented using Redis keys with TTL
+* Prevents repetitive retries to failing APIs
+* State machine: `closed → open → half-open`
+* Auto resets after cooldown period
+
+---
+
+## 🔖 Roadmap (Next Features)
 
 * [ ] Push notifications (SNS)
 * [ ] Admin dashboard (React + Map integration)
-* [ ] Emergency contact alerts with ally system
+* [ ] Ally system with mutual request & live tracking
 * [ ] Zone-based geofencing and risk prediction
 * [ ] Upload media (image/audio) for incidents
 * [ ] Chatbot integration (LLM-powered)
+* [ ] Redis Pub/Sub for live updates
 * [ ] Mobile App using React Native
 
 ---
 
 ## 🧠 Credits
 
-Built by Anish Samantaray using FastAPI, AWS Lambda, and DynamoDB for GuardianX – a modern safety and incident reporting platform.
+Built by **Anish Samantaray** using FastAPI, AWS Lambda, DynamoDB, and Redis for GuardianX – a modern safety and incident reporting platform.
 
 ---
 
-## 📄 License
+## 🔖 License
 
 MIT – Free to use, modify, and deploy.
