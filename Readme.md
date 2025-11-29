@@ -21,6 +21,8 @@ GuardianX is a secure, scalable backend system built with **FastAPI**, designed 
 * **Geolocation**: Google Maps API (proxied)
 * **Monitoring**: CloudWatch + SNS Alerts
 
+> **Note:** For *production*, it is recommended to use **Amazon SES** instead of Gmail SMTP for higher throughput and reliability.
+
 **Flow:**
 
 1. User signs up → backend stores profile in DynamoDB
@@ -120,6 +122,58 @@ terraform apply -auto-approve
 ### 4. API Gateway Endpoint
 
 Terraform will output the live HTTP endpoint linked to Lambda.
+
+---
+
+
+## 📊 Logging & Monitoring (CloudWatch)
+
+All Lambda invocations emit structured JSON logs for observability.
+
+### Example Log Structure
+
+```
+{
+  "level": "INFO",
+  "timestamp": "2025-01-22T10:33:12Z",
+  "route": "/sos/trigger",
+  "email": "user@example.com",
+  "lat": 12.9182,
+  "lng": 77.6421,
+  "message": "SOS event recorded"
+}
+```
+
+SNS Alerts configured for:
+
+* Lambda failures
+* DynamoDB throttling
+* Circuit breaker OPEN state
+* High API latency
+
+---
+
+## 🚢 Deployment Strategy & Versioning
+
+
+GuardianX uses a modern CI/CD-friendly deployment workflow:
+
+### Versioning
+
+* Each Docker image is versioned using semantic tags (`v1.0.0`, `v1.1.0`, etc.)
+* Lambda uses **image digest pinning** for reliable rollbacks
+* Terraform automatically updates Lambda to the latest pushed image
+
+### Deployment Flow
+
+1. Build Docker image locally or through CI
+2. Tag with version + `latest`
+3. Push to Amazon ECR
+4. Terraform applies infra updates
+5. Lambda pulls the new container image
+6. CloudWatch monitors runtime behaviour
+
+Blue-green / canary deployment support can be added later via Lambda traffic shifting.
 
 ---
 
