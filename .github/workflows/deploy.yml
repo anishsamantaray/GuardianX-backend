@@ -66,6 +66,8 @@ jobs:
             GOOGLE_PLACES_API_KEY = "${{ secrets.GOOGLE_PLACES_API_KEY }}"
             GUARDIANX_API_KEY = "${{ secrets.GUARDIANX_API_KEY }}"
             REDIS_HOST="${{ secrets.REDIS_HOST }}"
+            REDIS_PORT="${{ secrets.REDIS_PORT }}"
+            REDIS_PASSWORD="${{ secrets.REDIS_PASSWORD }}"
           }
           
           image_uri = "${{ secrets.IMAGE_URI }}"
