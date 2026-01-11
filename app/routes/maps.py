@@ -1,9 +1,9 @@
 from fastapi import APIRouter, Query, Depends
-import httpx
 import os
 from dotenv import load_dotenv
 
 from app.core.auth import get_current_user
+from app.core.http_client import async_client  # ✅ NEW
 from app.utils.maps import (
     get_user_home_coordinates,
     get_distance_from_home
@@ -26,18 +26,22 @@ async def autocomplete(
     params = {"input": input, "key": GOOGLE_MAPS_API_KEY}
 
     async def call_google_maps():
-        async with httpx.AsyncClient() as client:
-            response = await client.get(url, params=params, timeout=5.0)
-            response.raise_for_status()
-            return response.json()
+        response = await async_client.get(url, params=params)
+        response.raise_for_status()
+        return response.json()
 
     try:
-        data = await execute_with_breaker("google_maps_autocomplete", call_google_maps)
-        predictions = [
-            {"description": item["description"], "place_id": item["place_id"]}
+        data = await execute_with_breaker(
+            "google_maps_autocomplete",
+            call_google_maps
+        )
+        return [
+            {
+                "description": item["description"],
+                "place_id": item["place_id"]
+            }
             for item in data.get("predictions", [])
         ]
-        return predictions
 
     except Exception as e:
         return {"error": f"Google Maps (autocomplete) unavailable: {str(e)}"}
@@ -52,22 +56,31 @@ async def place_details(
     params = {"place_id": place_id, "key": GOOGLE_MAPS_API_KEY}
 
     async def call_google_maps_details():
-        async with httpx.AsyncClient() as client:
-            response = await client.get(url, params=params, timeout=5.0)
-            response.raise_for_status()
-            return response.json()
+        response = await async_client.get(url, params=params)
+        response.raise_for_status()
+        return response.json()
 
     try:
-        data = await execute_with_breaker("google_maps_details", call_google_maps_details)
+        data = await execute_with_breaker(
+            "google_maps_details",
+            call_google_maps_details
+        )
         result = data.get("result", {})
         address_components = result.get("address_components", [])
 
-        city = next((c["long_name"] for c in address_components if "locality" in c["types"]), None)
+        city = next(
+            (c["long_name"] for c in address_components if "locality" in c["types"]),
+            None
+        )
 
         state = None
         for level in range(1, 6):
             state = next(
-                (c["long_name"] for c in address_components if f"administrative_area_level_{level}" in c["types"]),
+                (
+                    c["long_name"]
+                    for c in address_components
+                    if f"administrative_area_level_{level}" in c["types"]
+                ),
                 None
             )
             if state:
@@ -79,8 +92,6 @@ async def place_details(
         )
 
         location = result.get("geometry", {}).get("location", {})
-        lat = location.get("lat")
-        lng = location.get("lng")
 
         return {
             "line1": result.get("formatted_address"),
@@ -88,8 +99,8 @@ async def place_details(
             "city": city,
             "state": state,
             "pincode": pincode,
-            "latitude": lat,
-            "longitude": lng
+            "latitude": location.get("lat"),
+            "longitude": location.get("lng"),
         }
 
     except Exception as e:
@@ -132,7 +143,6 @@ async def get_distance_from_home_endpoint(
     }
 
     await set_cache(cache_key, response_data, ttl=3600)
-
     return response_data
 
 
@@ -146,13 +156,16 @@ async def reverse_geocode(
     params = {"latlng": f"{lat},{lng}", "key": GOOGLE_MAPS_API_KEY}
 
     async def call_google_reverse_geocode():
-        async with httpx.AsyncClient() as client:
-            response = await client.get(url, params=params, timeout=5.0)
-            response.raise_for_status()
-            return response.json()
+        response = await async_client.get(url, params=params)
+        response.raise_for_status()
+        return response.json()
 
     try:
-        data = await execute_with_breaker("google_maps_reverse", call_google_reverse_geocode)
+        data = await execute_with_breaker(
+            "google_maps_reverse",
+            call_google_reverse_geocode
+        )
+
         results = data.get("results", [])
         if not results:
             return {"error": "No results found"}
@@ -160,12 +173,19 @@ async def reverse_geocode(
         result = results[0]
         address_components = result.get("address_components", [])
 
-        city = next((c["long_name"] for c in address_components if "locality" in c["types"]), None)
+        city = next(
+            (c["long_name"] for c in address_components if "locality" in c["types"]),
+            None
+        )
 
         state = None
         for level in range(1, 6):
             state = next(
-                (c["long_name"] for c in address_components if f"administrative_area_level_{level}" in c["types"]),
+                (
+                    c["long_name"]
+                    for c in address_components
+                    if f"administrative_area_level_{level}" in c["types"]
+                ),
                 None
             )
             if state:
@@ -177,8 +197,6 @@ async def reverse_geocode(
         )
 
         location = result.get("geometry", {}).get("location", {})
-        latitude = location.get("lat")
-        longitude = location.get("lng")
 
         return {
             "line1": result.get("formatted_address"),
@@ -186,8 +204,8 @@ async def reverse_geocode(
             "city": city,
             "state": state,
             "pincode": pincode,
-            "latitude": latitude,
-            "longitude": longitude,
+            "latitude": location.get("lat"),
+            "longitude": location.get("lng"),
         }
 
     except Exception as e:
