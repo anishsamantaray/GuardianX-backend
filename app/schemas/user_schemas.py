@@ -1,8 +1,10 @@
 from pydantic import BaseModel, EmailStr
-from typing import List, Optional
+from typing import Optional
+
 
 class EmailRequest(BaseModel):
     email: EmailStr
+
 
 class Address(BaseModel):
     line1: str
@@ -11,7 +13,8 @@ class Address(BaseModel):
     state: str
     lat: float
     long: float
-    pincode : str
+    pincode: str
+
 
 class UserSignupRequest(BaseModel):
     name: str
@@ -20,13 +23,13 @@ class UserSignupRequest(BaseModel):
     whatsapp_opt_in: bool
     home_address: Address
 
+
 class OTPVerifyRequest(BaseModel):
     email: EmailStr
     otp: str
 
 
 class UpdateUserProfile(BaseModel):
-    email: EmailStr
     name: Optional[str] = None
     phone: Optional[str] = None
     whatsapp_opt_in: Optional[bool] = None

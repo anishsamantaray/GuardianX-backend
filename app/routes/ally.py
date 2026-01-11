@@ -66,7 +66,7 @@ async def get_ally_requests(
 
 
 
-@router.get("/")
+@router.get("")
 async def list_allies(
     current_user: str = Depends(get_current_user)
 ):

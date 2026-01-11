@@ -1,21 +1,21 @@
-from pydantic import BaseModel,EmailStr
-
+from pydantic import BaseModel
+from datetime import datetime
 
 
 class SOSLocation(BaseModel):
     latitude: float
     longitude: float
 
+
 class SOSTriggerRequest(BaseModel):
-    email: EmailStr
     location: SOSLocation
-    timestamp: str
+    timestamp: datetime
+
 
 class SOSHeartbeatRequest(BaseModel):
-    email: EmailStr
     location: SOSLocation
-    timestamp: str
+    timestamp: datetime
+
 
 class SOSEndRequest(BaseModel):
-    email: EmailStr
-    timestamp: str
+    timestamp: datetime
