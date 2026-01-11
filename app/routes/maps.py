@@ -32,17 +32,12 @@ async def autocomplete(
             return response.json()
 
     try:
-        data = await execute_with_breaker(
-            "google_maps_autocomplete",
-            call_google_maps
-        )
-        return [
-            {
-                "description": item["description"],
-                "place_id": item["place_id"]
-            }
+        data = await execute_with_breaker("google_maps_autocomplete", call_google_maps)
+        predictions = [
+            {"description": item["description"], "place_id": item["place_id"]}
             for item in data.get("predictions", [])
         ]
+        return predictions
 
     except Exception as e:
         return {"error": f"Google Maps (autocomplete) unavailable: {str(e)}"}
@@ -63,27 +58,16 @@ async def place_details(
             return response.json()
 
     try:
-        data = await execute_with_breaker(
-            "google_maps_details",
-            call_google_maps_details
-        )
-
+        data = await execute_with_breaker("google_maps_details", call_google_maps_details)
         result = data.get("result", {})
         address_components = result.get("address_components", [])
 
-        city = next(
-            (c["long_name"] for c in address_components if "locality" in c["types"]),
-            None
-        )
+        city = next((c["long_name"] for c in address_components if "locality" in c["types"]), None)
 
         state = None
         for level in range(1, 6):
             state = next(
-                (
-                    c["long_name"]
-                    for c in address_components
-                    if f"administrative_area_level_{level}" in c["types"]
-                ),
+                (c["long_name"] for c in address_components if f"administrative_area_level_{level}" in c["types"]),
                 None
             )
             if state:
@@ -95,6 +79,8 @@ async def place_details(
         )
 
         location = result.get("geometry", {}).get("location", {})
+        lat = location.get("lat")
+        lng = location.get("lng")
 
         return {
             "line1": result.get("formatted_address"),
@@ -102,8 +88,8 @@ async def place_details(
             "city": city,
             "state": state,
             "pincode": pincode,
-            "latitude": location.get("lat"),
-            "longitude": location.get("lng"),
+            "latitude": lat,
+            "longitude": lng
         }
 
     except Exception as e:
@@ -166,11 +152,7 @@ async def reverse_geocode(
             return response.json()
 
     try:
-        data = await execute_with_breaker(
-            "google_maps_reverse",
-            call_google_reverse_geocode
-        )
-
+        data = await execute_with_breaker("google_maps_reverse", call_google_reverse_geocode)
         results = data.get("results", [])
         if not results:
             return {"error": "No results found"}
@@ -178,19 +160,12 @@ async def reverse_geocode(
         result = results[0]
         address_components = result.get("address_components", [])
 
-        city = next(
-            (c["long_name"] for c in address_components if "locality" in c["types"]),
-            None
-        )
+        city = next((c["long_name"] for c in address_components if "locality" in c["types"]), None)
 
         state = None
         for level in range(1, 6):
             state = next(
-                (
-                    c["long_name"]
-                    for c in address_components
-                    if f"administrative_area_level_{level}" in c["types"]
-                ),
+                (c["long_name"] for c in address_components if f"administrative_area_level_{level}" in c["types"]),
                 None
             )
             if state:
@@ -202,6 +177,8 @@ async def reverse_geocode(
         )
 
         location = result.get("geometry", {}).get("location", {})
+        latitude = location.get("lat")
+        longitude = location.get("lng")
 
         return {
             "line1": result.get("formatted_address"),
@@ -209,8 +186,8 @@ async def reverse_geocode(
             "city": city,
             "state": state,
             "pincode": pincode,
-            "latitude": location.get("lat"),
-            "longitude": location.get("lng"),
+            "latitude": latitude,
+            "longitude": longitude,
         }
 
     except Exception as e:
