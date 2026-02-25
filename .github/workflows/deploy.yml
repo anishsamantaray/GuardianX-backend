@@ -68,6 +68,11 @@ jobs:
             REDIS_HOST="${{ secrets.REDIS_HOST }}"
             REDIS_PORT="${{ secrets.REDIS_PORT }}"
             REDIS_PASSWORD="${{ secrets.REDIS_PASSWORD }}"
+            SENTRY_DSN="${{ secrets.SENTRY_DSN }}"
+            SENTRY_ENVIRONMENT="production"
+            SENTRY_TRACES_SAMPLE_RATE=0.1
+            SENTRY_PROFILES_SAMPLE_RATE=0.0
+          
           }
           
           image_uri = "${{ secrets.IMAGE_URI }}"

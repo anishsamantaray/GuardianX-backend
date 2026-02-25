@@ -4,6 +4,10 @@ import smtplib
 from email.mime.text import MIMEText
 from email.utils import formataddr
 
+from app.core.sentry import init_sentry
+
+init_sentry(service_name="guardianx-ally-email-worker", enable_lambda=True)
+
 # Email template
 SUBJECT_TPL = "GuardianX – SOS Alert from {user_email}"
 HTML_TPL = """\

@@ -1,15 +1,16 @@
-from fastapi import FastAPI ,Request ,HTTPException
+from fastapi import FastAPI
 from app.routes.user import router as user_router
 from app.routes.maps import router as maps_router
 from app.routes.ally import router as ally_router
 from app.routes.sos import router as sos_router
 from app.routes.incident import router as incident_router
-import os
+from app.core.sentry import init_sentry
 from mangum import Mangum
 from fastapi.middleware.cors import CORSMiddleware
 from dotenv import load_dotenv
 
 load_dotenv()
+init_sentry(service_name="guardianx-backend-api", enable_fastapi=True, enable_lambda=True)
 app = FastAPI(title="GuardianX Backend")
 
 origins = [
@@ -30,5 +31,9 @@ app.include_router(ally_router)
 app.include_router(sos_router)
 
 app.include_router(incident_router)
+
+@app.get("/sentry-debug")
+async def trigger_error():
+    division_by_zero = 1 / 0
 
 handler = Mangum(app)

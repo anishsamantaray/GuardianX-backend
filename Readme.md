@@ -190,40 +190,85 @@ Blue-green / canary deployment support can be added later via Lambda traffic shi
 
 ## 📙 API Endpoints Overview
 
-| Method | Endpoint                  | Description                     |
-| ------ | ------------------------- | ------------------------------- |
-| POST   | /user/signup              | Create new user                 |
-| POST   | /user/send-otp            | Send OTP to registered user     |
-| POST   | /user/verify-otp          | Validate OTP, return tokens     |
-| POST   | /user/refresh-token       | Get new access token            |
-| GET    | /user/me                  | Fetch current user profile      |
-| PUT    | /user/edit                | Update user profile             |
-| POST   | /sos/trigger              | Log SOS event                   |
-| POST   | /sos/heartbeat            | Update live location            |
-| GET    | /sos/track/{email}        | Track live SOS location of user |
-| POST   | /incident/report          | Submit past safety report       |
-| GET    | /incident/history/{email} | View user's incident history    |
-| GET    | /incident/{incident_id}   | Get specific incident details   |
-| GET    | /maps/autocomplete        | Proxy for address typing        |
-| GET    | /maps/details             | Get full address from ID        |
-| GET    | /maps/distance-from-home  | Distance from home via road     |
+### Authentication (Public)
+
+| Method | Endpoint              | Description                  |
+| ------ | --------------------- | ---------------------------- |
+| POST   | `/user/signup`        | Register a new user          |
+| POST   | `/user/send-otp`      | Send OTP to registered email |
+| POST   | `/user/verify-otp`    | Verify OTP, issue tokens     |
+| POST   | `/user/logout`        | Invalidate refresh token     |
+| GET    | `/user/refresh-token` | Issue new access token       |
 
 ---
 
+### User (Protected)
+
+| Method | Endpoint                   | Description                         |
+| ------ | -------------------------- | ----------------------------------- |
+| GET    | `/user/profile`            | Get current user profile            |
+| PATCH  | `/user/editprofile`        | Update current user profile         |
+| POST   | `/user/upload-profile-pic` | Get presigned URL for profile image |
+| GET    | `/user/suggestions`        | Search users by name/email          |
+
+---
+
+### Allies (Protected)
+
+| Method | Endpoint                    | Description                  |
+| ------ | --------------------------- | ---------------------------- |
+| POST   | `/allies/request`           | Send ally request            |
+| POST   | `/allies/respond`           | Accept / reject ally request |
+| GET    | `/allies/requests/received` | Pending incoming requests    |
+| GET    | `/allies/requests/sent`     | Pending outgoing requests    |
+| GET    | `/allies`                   | List accepted allies         |
+
+---
+
+### SOS (Protected)
+
+| Method | Endpoint         | Description              |
+| ------ | ---------------- | ------------------------ |
+| POST   | `/sos/trigger`   | Trigger SOS event        |
+| POST   | `/sos/heartbeat` | Update live SOS location |
+| POST   | `/sos/end`       | End SOS session          |
+
+---
+
+### Incidents (Protected)
+
+| Method | Endpoint                  | Description                 |
+| ------ | ------------------------- | --------------------------- |
+| POST   | `/incident/report`        | Report a safety incident    |
+| GET    | `/incident/history`       | List current user incidents |
+| GET    | `/incident/{incident_id}` | Get incident details        |
+
+---
+
+### Maps
+
+| Method | Endpoint                   | Auth      | Description             |
+| ------ | -------------------------- | --------- | ----------------------- |
+| GET    | `/maps/autocomplete`       | Protected | Address autocomplete    |
+| GET    | `/maps/details`            | Protected | Place details from ID   |
+| GET    | `/maps/reverse-geocode`    | Protected | Coordinates to address  |
+| GET    | `/maps/distance-from-home` | Protected | Distance from user home |
+
+---
 ## 📌 Redis Integration
 
-**Caching Layer**
+### Caching
 
-* Write-through caching for user and incident reads
-* TTL-based invalidation (5–10 min)
-* Reduces DynamoDB read load and improves response latency
+* Write-through caching for read-heavy endpoints
+* TTL-based invalidation
+* Reduced DynamoDB read load
 
-**Circuit Breakers**
+### Circuit Breakers
 
-* Implemented using Redis keys with TTL
-* Prevents repetitive retries to failing APIs
-* State machine: `closed → open → half-open`
-* Auto resets after cooldown period
+* Redis-backed state machine
+* Prevents cascading failures
+* States: `closed → open → half-open`
+* Automatic recovery after cooldown
 
 ---
 
