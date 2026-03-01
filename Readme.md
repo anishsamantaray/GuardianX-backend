@@ -19,7 +19,7 @@ GuardianX is a secure, scalable backend system built with **FastAPI**, designed 
 * **Email**: SMTP (Gmail)
 * **Auth**: JWT + Refresh Tokens
 * **Geolocation**: Google Maps API (proxied)
-* **Monitoring**: CloudWatch + SNS Alerts
+* **Monitoring**: CloudWatch + SNS Alerts + Sentry
 
 > **Note:** For *production*, it is recommended to use **Amazon SES** instead of Gmail SMTP for higher throughput and reliability.
 
@@ -91,6 +91,13 @@ REDIS_PASSWORD=your_redis_password
 
 # Google Maps
 GOOGLE_MAPS_API_KEY=your_maps_key
+
+# Sentry (Observability)
+SENTRY_DSN=your_sentry_dsn
+SENTRY_ENVIRONMENT=development
+SENTRY_RELEASE=v1.0.0
+SENTRY_TRACES_SAMPLE_RATE=0.1
+SENTRY_PROFILES_SAMPLE_RATE=0.0
 ```
 
 ---
@@ -150,6 +157,25 @@ SNS Alerts configured for:
 * DynamoDB throttling
 * Circuit breaker OPEN state
 * High API latency
+
+### Sentry Observability
+
+GuardianX is integrated with **Sentry** for error tracking and performance observability.
+
+What is captured:
+
+* Unhandled exceptions in FastAPI routes
+* Lambda runtime exceptions (including worker handlers)
+* Optional trace/profiling data via sample-rate env vars
+
+Where it is initialized:
+
+* API app startup (`app/main.py`)
+* Ally email worker Lambda (`lambda_handlers/ally_email_worker.py`)
+
+Useful validation endpoint:
+
+* `GET /sentry-debug` intentionally raises an error to verify Sentry ingestion (use only in non-production environments).
 
 ---
 
