@@ -17,6 +17,41 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v3
 
+
+      # -----------------------------
+      # Setup Python (for tests + sonar)
+      # -----------------------------
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.11"
+
+      - name: Install Dependencies
+        run: |
+          pip install -r requirements.txt
+          pip install pytest pytest-cov
+
+
+      # -----------------------------
+      # Run Tests + Coverage
+      # -----------------------------
+      - name: Run Tests
+        run: |
+          pytest --cov=app --cov-report=xml
+
+
+      # -----------------------------
+      # SonarQube Scan
+      # -----------------------------
+      - name: SonarQube Scan
+        uses: SonarSource/sonarqube-scan-action@v2
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+
+
+      # -----------------------------
+      # AWS Setup
+      # -----------------------------
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v2
         with:
@@ -28,16 +63,28 @@ jobs:
         run: |
           aws ecr get-login-password --region $AWS_REGION | docker login --username AWS --password-stdin $ECR_URI
 
+
+      # -----------------------------
+      # Docker Build & Push
+      # -----------------------------
       - name: Build and Push Docker Image (latest tag)
         run: |
           docker build -t guardianx-backend:latest .
           docker tag guardianx-backend:latest $ECR_URI:latest
           docker push $ECR_URI:latest
 
+
+      # -----------------------------
+      # Force Lambda update
+      # -----------------------------
       - name: Create dummy build file to force Lambda update
         run: |
           echo "Build ID: $GITHUB_SHA" > .build_id
 
+
+      # -----------------------------
+      # Terraform Setup
+      # -----------------------------
       - name: Install Terraform
         uses: hashicorp/setup-terraform@v3
         with:
@@ -49,6 +96,9 @@ jobs:
           terraform init
 
 
+      # -----------------------------
+      # Generate terraform.tfvars
+      # -----------------------------
       - name: Generate terraform.tfvars from GitHub Secrets
         run: |
           cat <<EOF > terraform/terraform.tfvars
@@ -72,21 +122,27 @@ jobs:
             SENTRY_ENVIRONMENT="production"
             SENTRY_TRACES_SAMPLE_RATE=0.1
             SENTRY_PROFILES_SAMPLE_RATE=0.0
-          
           }
-          
+
           image_uri = "${{ secrets.IMAGE_URI }}"
           EOF
 
+
+      # -----------------------------
+      # Terraform Import
+      # -----------------------------
       - name: Terraform Import IncidentTable (idempotent)
         run: |
-            cd terraform
-            terraform import \
-              -var-file=terraform.tfvars \
-              aws_dynamodb_table.incident "${{ secrets.INCIDENT_TABLE_NAME }}" \
-              || echo "Table already imported"
+          cd terraform
+          terraform import \
+            -var-file=terraform.tfvars \
+            aws_dynamodb_table.incident "${{ secrets.INCIDENT_TABLE_NAME }}" \
+            || echo "Table already imported"
 
 
+      # -----------------------------
+      # Terraform Apply
+      # -----------------------------
       - name: Terraform Apply
         run: |
           cd terraform
